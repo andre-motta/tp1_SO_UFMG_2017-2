@@ -48,6 +48,7 @@ struct pipecmd {
   struct cmd *right; // lado direito do pipe
 };
 
+int lsh_launch(char **args);
 int fork1(void);  // Fork mas fechar se ocorrer erro.
 struct cmd *parsecmd(char*); // Processar o linha de comando.
 
@@ -74,7 +75,7 @@ void runcmd(struct cmd *cmd)
     /* MARK START task2
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
-	char **arg = &(ecmd.argv);
+	char **arg = ecmd->argv;
 	lsh_launch(arg);
     fprintf(stderr, "exec nao implementado\n");
     /* MARK END task2 */
