@@ -52,8 +52,7 @@ int fork1(void);  // Fork mas fechar se ocorrer erro.
 struct cmd *parsecmd(char*); // Processar o linha de comando.
 
 /* Executar comando cmd.  Nunca retorna. */
-void
-runcmd(struct cmd *cmd)
+void runcmd(struct cmd *cmd)
 {
   int p[2], r;
   struct execcmd *ecmd;
@@ -75,6 +74,8 @@ runcmd(struct cmd *cmd)
     /* MARK START task2
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
+	char **arg = &(ecmd.argv);
+	lsh_launch(arg);
     fprintf(stderr, "exec nao implementado\n");
     /* MARK END task2 */
     break;
@@ -95,7 +96,8 @@ runcmd(struct cmd *cmd)
     /* MARK START task4
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
-    fprintf(stderr, "pipe nao implementado\n");
+	
+    //fprintf(stderr, "pipe nao implementado\n");
     /* MARK END task4 */
     break;
   }    
@@ -124,12 +126,14 @@ main(void)
   while(getcmd(buf, sizeof(buf)) >= 0){
     /* MARK START task1 */
     /* TAREFA1: O que faz o if abaixo e por que ele é necessário?
+	Checa se o diretorio para onde cd aponta existe, é necessário
+	para informar o usuário caso não exista.
      * Insira sua resposta no código e modifique o fprintf abaixo
      * para reportar o erro corretamente. */
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       buf[strlen(buf)-1] = 0;
       if(chdir(buf+3) < 0)
-        fprintf(stderr, "reporte erro\n");
+        fprintf(stderr, "diretorio não existe\n");
       continue;
     }
     /* MARK END task1 */
@@ -359,6 +363,31 @@ parseexec(char **ps, char *es)
   }
   cmd->argv[argc] = 0;
   return ret;
+}
+
+int lsh_launch(char **args)
+{
+  pid_t pid, wpid;
+  int status;
+
+  pid = fork();
+  if (pid == 0) {
+    // Child process
+    if (execvp(args[0], args) == -1) {
+      perror("lsh");
+    }
+    exit(EXIT_FAILURE);
+  } else if (pid < 0) {
+    // Error forking
+    perror("lsh");
+  } else {
+    // Parent process
+    do {
+      wpid = waitpid(pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
+  return 1;
 }
 
 // vim: expandtab:ts=2:sw=2:sts=2
