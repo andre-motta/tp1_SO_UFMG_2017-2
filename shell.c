@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 
 /* André Lustosa Cabral de Paula Motta */
-/* Daniel Ishitani Melo ...*/
+/* Daniel Ishitani Melo */
 
 /****************************************************************
  * Shell xv6 simplificado
