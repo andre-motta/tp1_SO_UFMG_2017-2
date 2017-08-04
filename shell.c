@@ -10,14 +10,13 @@
 
 /* André Lustosa Cabral de Paula Motta */
 /* Daniel Ishitani Melo */
-teste
+
 /****************************************************************
  * Shell xv6 simplificado
  *
  * Este codigo foi adaptado do codigo do UNIX xv6 e do material do
  * curso de sistemas operacionais do MIT (6.828).
  ***************************************************************/
-//teste
 #define MAXARGS 10
 
 /* Todos comandos tem um tipo.  Depois de olhar para o tipo do
