@@ -8,9 +8,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-/* MARK NAME Seu Nome Aqui */
-/* MARK NAME Nome de Outro Integrante Aqui */
-/* MARK NAME E Etc */
+/* André Lustosa Cabral de Paula Motta */
+/* Daniel Ishitani Melo */
 
 /****************************************************************
  * Shell xv6 simplificado
@@ -22,7 +21,7 @@
 #define MAXARGS 10
 
 /* Todos comandos tem um tipo.  Depois de olhar para o tipo do
- * comando, o código converte um *cmd para o tipo específico de
+ * comando, o código converte um *cmd para o tipo espec1ífico de
  * comando. */
 struct cmd {
   int type; /* ' ' (exec)
