@@ -47,7 +47,7 @@ struct pipecmd {
   struct cmd *right; // lado direito do pipe
 };
 
-int lsh_launch(char **args);
+int executecmd(char **args);
 int fork1(void);  // Fork mas fechar se ocorrer erro.
 struct cmd *parsecmd(char*); // Processar o linha de comando.
 
@@ -365,25 +365,25 @@ parseexec(char **ps, char *es)
   return ret;
 }
 
-int lsh_launch(char **args)
+int executecmd(char **args)
 {
-  pid_t pid, wpid;
+  pid_t pid, wait_Pid;
   int status;
 
   pid = fork();
   if (pid == 0) {
     // Child process
     if (execvp(args[0], args) == -1) {
-      perror("lsh");
+      perror("command was not recognized\n");
     }
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
-    perror("lsh");
+    perror("command was not recognized\n");
   } else {
     // Parent process
     do {
-      wpid = waitpid(pid, &status, WUNTRACED);
+      wait_Pid = waitpid(pid, &status, WUNTRACED);
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 
