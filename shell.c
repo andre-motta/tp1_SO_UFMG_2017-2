@@ -75,7 +75,7 @@ void runcmd(struct cmd *cmd)
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
 	char **arg = ecmd->argv;
-	lsh_launch(arg);
+	executecmd(arg);
     fprintf(stderr, "exec nao implementado\n");
     /* MARK END task2 */
     break;
