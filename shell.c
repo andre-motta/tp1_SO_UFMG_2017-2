@@ -48,6 +48,7 @@ struct pipecmd {
 };
 
 int executecmd(char **args);
+int redirectIO(struct redircmd* rcmd);
 int fork1(void);  // Fork mas fechar se ocorrer erro.
 struct cmd *parsecmd(char*); // Processar o linha de comando.
 
@@ -76,7 +77,7 @@ void runcmd(struct cmd *cmd)
      * comandos simples. */
 	char **arg = ecmd->argv;
 	executecmd(arg);
-    fprintf(stderr, "exec nao implementado\n");
+    
     /* MARK END task2 */
     break;
 
@@ -86,7 +87,8 @@ void runcmd(struct cmd *cmd)
     /* MARK START task3
      * TAREFA3: Implemente codigo abaixo para executar
      * comando com redirecionamento. */
-    fprintf(stderr, "redir nao implementado\n");
+    redirectIO(rcmd);
+    //fprintf(stderr, "redir nao implementado\n");
     /* MARK END task3 */
     runcmd(rcmd->cmd);
     break;
@@ -371,23 +373,63 @@ int executecmd(char **args)
   int status;
 
   pid = fork();
-  if (pid == 0) {
+  if (pid == 0) 
+  {
     // Child process
-    if (execvp(args[0], args) == -1) {
-      perror("command was not recognized\n");
+    if (execvp(args[0], args) == -1) 
+    {
+      //perror("command was not recognized\n");
     }
     exit(EXIT_FAILURE);
-  } else if (pid < 0) {
+  } else if (pid < 0) 
+  {
     // Error forking
-    perror("command was not recognized\n");
-  } else {
+    perror("Error Creating child process\n");
+  } else 
+  {
     // Parent process
-    do {
+    do 
+    {
       wait_Pid = waitpid(pid, &status, WUNTRACED);
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 
   return 1;
+}
+int redirectIO(struct redircmd* rcmd)
+{
+  pid_t pid = fork(), wait_Pid;
+  int status;
+  if(pid == -1)
+  {
+    perror("Unsucssessful FORK\n");
+  }else if (pid == 0)
+  {
+    int descriptor[2];
+    if(rcmd->type == 60)
+    {
+      descriptor[rcmd->fd] = open (rcmd->file, rcmd->mode);
+      dup2(descriptor[rcmd->fd], STDIN_FILENO);
+      close(descriptor[rcmd->fd]);
+    }else if(rcmd->type == 62)
+    {
+      descriptor[rcmd->fd] = open (rcmd->file, rcmd->mode);
+      dup2(descriptor[rcmd->fd], STDOUT_FILENO);
+      close(descriptor[rcmd->fd]);
+    }
+   
+    runcmd(rcmd->cmd);
+    _exit(1);
+
+  } else
+  {
+    // Parent process
+    do 
+    {
+      wait_Pid = waitpid(pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
 }
 
 // vim: expandtab:ts=2:sw=2:sts=2
