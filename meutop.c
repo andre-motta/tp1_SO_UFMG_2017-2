@@ -84,8 +84,7 @@ int main (int argc, char **argv)
         }
         printf("|PID  | USER | NOME | STATUS| \n | -------- | ------- | ------- | -------| \n");
         int count =0;
-        do
-                {
+        
         while(input = readdir(dp))
         {
             if (input->d_name[0] == '0'||input->d_name[0] == '1'||input->d_name[0] == '2'||input->d_name[0] == '3'||input->d_name[0] == '4'||input->d_name[0] == '5'||input->d_name[0] == '6'||input->d_name[0] == '7'||input->d_name[0] == '8'||input->d_name[0] == '9')
@@ -111,7 +110,7 @@ int main (int argc, char **argv)
                
             }
         }
-                } while(count < 17);
+                
         closedir(dp);
         
         
