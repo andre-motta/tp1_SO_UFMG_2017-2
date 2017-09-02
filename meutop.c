@@ -25,9 +25,28 @@ struct Node
     struct Node *next;
 };
 
+
 void clear()
 {
  printf("\033[H\033[J"); 
+}
+void freeNodeList(struct Node* start)
+{
+    while(start->next->pid != 1)
+    {
+        struct Node *aux = start;
+        start = start->next;
+        //printf("Freed block of pid: %d\n", start->pid);
+        free(start->data);
+        free(start);
+
+    }
+    start = start->next;
+   // printf("Freed block of pid: %d\n", start->pid);
+    free(start->data);
+    free(start);
+
+
 }
 
 /* Function to add a node at the beginning of Linked List.
@@ -70,19 +89,14 @@ void parse (char* origin, char* destination)
     int i;
     for(i = 1; i<strlen(origin); i++)
     {
-       // printf("Char [%d] = %c   logo:", i, origin[i]);
+       
         if (origin[i] != ')' && origin[i] != '/')
             {
-         //       printf("entrou\n");
                 destination[i-1] = origin[i];
-           //     printf ("Destination[%d] = %c\n", i, destination[i] );
             }
             else 
             {
-             //   printf("saiu\n");
                 destination[i-1] ='\0';
-                
-               // printf("destination = %s\n", destination);
                 return;
             }
     } 
@@ -92,50 +106,61 @@ int main (int argc, char **argv)
     char garbage[50];
     DIR *dp;
     struct Node *head;
+    struct PID_LIST *list;
     FILE *current;
-    char *filename = malloc(7*sizeof(char));
-    filename = "/proc/";
+    //char *filename = malloc(7*sizeof(char));
+    char filename[7] = "/proc/";
     struct dirent *input;
-    dp = opendir(filename);
-    if (dp == NULL) 
-    {
-        perror("opendir");
-        return -1;
-    }
-    while(input = readdir(dp))
-    {
-        if (input->d_name[0] == '0'||input->d_name[0] == '1'||input->d_name[0] == '2'||input->d_name[0] == '3'||input->d_name[0] == '4'||input->d_name[0] == '5'||input->d_name[0] == '6'||input->d_name[0] == '7'||input->d_name[0] == '8'||input->d_name[0] == '9')
-        {
-        push(&head, input);
-        char* final_str = append(filename, head->data->d_name);
-        final_str = append(final_str, "/stat");       
-        current = fopen(final_str,"r");
-        fscanf(current, "%d %s %c", &(head->pid), &garbage[0], &(head->status) );
-        parse(garbage, &(head->name[0]));
-        //printf("GARBAGE = %s and NAME = %s\n", garbage, head->name);
-        stat(final_str, &(head->Stat));
-        head->pwd = getpwuid(head->Stat.st_uid);
-        //
-        //puts(final_str);
-        }
-    }
+    
+    
     while(1)
     {
+        dp = opendir(filename);
+        if (dp == NULL) 
+        {
+            perror("opendir");
+            return -1;
+        }
+        while(input = readdir(dp))
+        {
+            if (input->d_name[0] == '0'||input->d_name[0] == '1'||input->d_name[0] == '2'||input->d_name[0] == '3'||input->d_name[0] == '4'||input->d_name[0] == '5'||input->d_name[0] == '6'||input->d_name[0] == '7'||input->d_name[0] == '8'||input->d_name[0] == '9')
+            {
+                
+                push(&head, input);
+                char* first_str = append(filename, head->data->d_name);
+                char* final_str = append(first_str, "/stat");
+                free(first_str);    
+                current = fopen(final_str,"r");
+                fscanf(current, "%d %s %c", &(head->pid), &garbage[0], &(head->status) );
+                parse(garbage, &(head->name[0]));            
+                stat(final_str, &(head->Stat));
+                head->pwd = getpwuid(head->Stat.st_uid);
+                fclose(current);
+                free(final_str);
+            }
+        }
+        closedir(dp);
         printf("|PID  | USER | NOME | STATUS| \n | -------- | ------- | ------- | -------| \n");
         int count =0;
         struct Node *print = head;
-    do
-    {
-        printf("| %d |%s | %s | %c |\n ", print->pid, print->pwd->pw_name, print->name, print->status);
-        print = print->next;
-        count ++;
-    }while(count < 17);
-       // printf("| %d |%s | %s | %c |\n ", print->pid, print->pwd->pw_name, print->name, print->status);
-        sleep(3);
-        clear();
+        do
+        {
+            printf("| %d |%s | %s | %c |\n ", print->pid, print->pwd->pw_name, print->name, print->status);
+            print = print->next;
+            count ++;
+            if (print->pid == 1) {
+                printf("| %d |%s | %s | %c |\n ", print->pid, print->pwd->pw_name, print->name, print->status);
+                break;
+            }
+        }while(count < 20);
+        freeNodeList(head);
+           // sleep(3); 
+            //clear();
+            
+
     }
 
-    closedir(dp);
-
+    
+    free(filename);
     return 0;
 }
