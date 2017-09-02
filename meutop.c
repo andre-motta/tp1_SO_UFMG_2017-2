@@ -70,13 +70,11 @@ int main (int argc, char **argv)
     DIR *dp;
     struct PID_LIST *list;
     FILE *current;
-    //char *filename = malloc(7*sizeof(char));
     char filename[7] = "/proc/";
-    //filename="/proc/";
     struct dirent *input;
     int i =0;
     
-    while(i < 4)
+    while(1)
     {
         dp = opendir(filename);
         if (dp == NULL) 
@@ -113,17 +111,16 @@ int main (int argc, char **argv)
                
             }
         }
-                } while(count < 20);
+                } while(count < 17);
         closedir(dp);
         
         
-        sleep(3); 
+        sleep(1); 
         clear();
         i++;  
 
     }
 
     
-    //free(filename);
     return 0;
 }
