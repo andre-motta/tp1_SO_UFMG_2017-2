@@ -22,7 +22,7 @@ struct Node
     char status;
     char user[50];
     struct passwd *pwd;
-    struct Node *next;
+    
 };
 
 
@@ -30,48 +30,7 @@ void clear()
 {
  printf("\033[H\033[J"); 
 }
-void freeNodeList(struct Node* start)
-{
-    while(start->next->pid != 1)
-    {
-        struct Node *aux = start;
-        start = start->next;
-        printf("Freed block of pid: %d\n", start->pid);
-        free(aux->data);
-        printf("Free data\n");
-        free(aux->pwd);
-        free(aux);
-        printf("Free node\n");
 
-    }
-    start = start->next;
-    printf("Freed block of pid: %d\n", start->pid);
-    free(start->data);
-    free(start->pwd);
-    free(start);
-
-
-}
-
-/* Function to add a node at the beginning of Linked List.
-   This function expects a pointer to the data to be added
-   and size of the data type */
-void push(struct Node** head_ref, struct dirent *new_data)
-{
-    size_t data_size = sizeof(struct dirent);
-    // Allocate memory for node
-    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
-
-    new_node->data  = malloc(data_size);
-    new_node->next = (*head_ref);
-
-    // Copy contents of new_data to newly allocated memory.
-    // Assumption: char takes 1 byte.
-    new_node->data = new_data;
-
-    // Change head pointer as new node is added at the beginning
-    (*head_ref)    = new_node;
-}
 
 /* Function to print nodes in a given linked list. fpitr is used
    to access the function to be used for printing current node data.
@@ -111,13 +70,13 @@ int main (int argc, char **argv)
     DIR *dp;
     struct PID_LIST *list;
     FILE *current;
-    char *filename = malloc(7*sizeof(char));
-    //char filename[7] = "/proc/";
-    filename="/proc/";
+    //char *filename = malloc(7*sizeof(char));
+    char filename[7] = "/proc/";
+    //filename="/proc/";
     struct dirent *input;
+    int i =0;
     
-    
-    while(1)
+    while(i < 4)
     {
         dp = opendir(filename);
         if (dp == NULL) 
@@ -135,9 +94,7 @@ int main (int argc, char **argv)
             {
                 
                 
-                struct Node *head = malloc (sizeof(struct Node));
-                //push(&head, input);
-                
+                struct Node *head = malloc (sizeof(struct Node));                
                 char* first_str = append(filename, input->d_name);
                 char* final_str = append(first_str, "/stat");
                 free(first_str);    
@@ -159,15 +116,14 @@ int main (int argc, char **argv)
                 } while(count < 20);
         closedir(dp);
         
-        //printf("FREE\n");
-        //freeNodeList(head);
+        
         sleep(3); 
         clear();
-            
+        i++;  
 
     }
 
     
-    free(filename);
+    //free(filename);
     return 0;
 }
