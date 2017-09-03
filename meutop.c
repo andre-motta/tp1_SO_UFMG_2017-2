@@ -9,8 +9,9 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <pwd.h>
+#include <pthread.h>
 
-
+#define Nthreads = 2
 
 /* A linked list node */
 struct Node
@@ -65,7 +66,7 @@ void parse (char* origin, char* destination)
     } 
 }
 
-void top()
+void *top()
 {
 	char garbage[50];
     DIR *dp;
@@ -121,8 +122,22 @@ void top()
 
     }
 }
-int main (int argc, char **argv)
+
+void *pidSig()
 {
-    top();
+	while(1)
+	{
+		int pid, sig;
+		scanf("%d %d", pid, sig);
+		kill(pid, sig);
+	}
+}
+
+int main (int argc, char **argv)
+{	
+	pthread_t[Nthreads];
+	pthread_create(&pthread[0], NULL, top, );
+	pthread_create(&pthread[1], NULL, pidSig, );
+    //top();
     return 0;
 }
