@@ -81,7 +81,7 @@ void top()
         if (dp == NULL) 
         {
             perror("opendir");
-            return -1;
+            return;
         }
         printf("| PID  |   USER   |   NOME   |STATUS|\n|------|----------|----------|------|\n");
         int count =0;
