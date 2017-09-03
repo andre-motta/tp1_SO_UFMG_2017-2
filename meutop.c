@@ -82,7 +82,7 @@ int main (int argc, char **argv)
             perror("opendir");
             return -1;
         }
-        printf("|PID  | USER | NOME | STATUS| \n | -------- | ------- | ------- | -------| \n");
+        printf("| PID  |   USER   |   NOME   |STATUS|\n|------|----------|----------|------|\n");
         int count =0;
         
         while(input = readdir(dp))
@@ -100,12 +100,12 @@ int main (int argc, char **argv)
                 parse(garbage, &(head->name[0]));            
                 stat(final_str, &(head->Stat));
                 head->pwd = getpwuid(head->Stat.st_uid);
-                printf("| %d |%s | %s | %c |\n ", head->pid, head->pwd->pw_name, head->name, head->status);
+                printf("|%-6d|%-10s|%-10s|  %c   |\n", head->pid, head->pwd->pw_name, head->name, head->status);
                 count ++;
                 fclose(current);
                 free(head);
                 free(final_str);
-                if (count == 20) break;
+                if (count == 17) break;
 
                
             }
@@ -114,7 +114,7 @@ int main (int argc, char **argv)
         closedir(dp);
         
         
-        sleep(1); 
+        sleep(3); 
         clear();
         i++;  
 
