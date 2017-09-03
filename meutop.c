@@ -135,9 +135,9 @@ void *pidSig()
 
 int main (int argc, char **argv)
 {	
-	pthread_t[Nthreads];
-	pthread_create(&pthread[0], NULL, top, );
-	pthread_create(&pthread[1], NULL, pidSig, );
+	pthread_t threads[Nthreads];
+	pthread_create(&threads[0], NULL, top, );
+	pthread_create(&threads[1], NULL, pidSig, );
     //top();
     return 0;
 }
