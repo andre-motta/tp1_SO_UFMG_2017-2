@@ -64,9 +64,10 @@ void parse (char* origin, char* destination)
             }
     } 
 }
-int main (int argc, char **argv)
+
+void top()
 {
-    char garbage[50];
+	char garbage[50];
     DIR *dp;
     struct PID_LIST *list;
     FILE *current;
@@ -119,7 +120,9 @@ int main (int argc, char **argv)
         i++;  
 
     }
-
-    
+}
+int main (int argc, char **argv)
+{
+    top();
     return 0;
 }
