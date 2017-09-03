@@ -95,9 +95,7 @@ void runcmd(struct cmd *cmd)
 
   case '|':
     pcmd = (struct pipecmd*)cmd;
-    /* MARK START task4
-     * TAREFA4: Implemente codigo abaixo para executar
-     * comando com pipes. */
+    /* Pipes case, executes everything and dups the entries. */
     if(pipe(p)<0)
       perror("pipe");
     if(fork1()==0){
@@ -386,6 +384,8 @@ parseexec(char **ps, char *es)
   return ret;
 }
 
+/* Function for execution of commands.*/
+
 int executecmd(char **args)
 {
   pid_t pid, wait_Pid;
@@ -415,6 +415,8 @@ int executecmd(char **args)
 
   return 1;
 }
+
+/*Function for redirecting I/O stream*/
 int redirectIO(struct redircmd* rcmd)
 {
   pid_t pid = fork(), wait_Pid;

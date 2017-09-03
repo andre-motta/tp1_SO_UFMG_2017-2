@@ -2,6 +2,4 @@
 TP1 de Sistemas Operacionais UFMG 2017/2
 
 A Fazer 
--Testar o redirect
--Pipe
--Multiple commands
+-Documentação

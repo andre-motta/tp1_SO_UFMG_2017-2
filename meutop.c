@@ -12,7 +12,7 @@
 #include <pthread.h>
 
 
-/* A linked list node */
+/* A node with all info pertinent for printing a line in TOP */
 struct Node
 {
     struct dirent *data;
@@ -25,16 +25,14 @@ struct Node
     
 };
 
-
+/*Function to print escape lines so that the screen updates fully with no system call better than system("clear");*/
 void clear()
 {
  printf("\033[H\033[J"); 
 }
 
 
-/* Function to print nodes in a given linked list. fpitr is used
-   to access the function to be used for printing current node data.
-   Note that different data types need different specifier in printf() */
+/* Function to append strings, Necessary for generating the filepath for each process (PID) */
 char* append(char* head, char* tail)
 {
     char* final_str;
@@ -47,6 +45,7 @@ char* append(char* head, char* tail)
 
     }
 }
+/*Function to parse process name and leave out the brackets + other info. Focus on the name on /proc/.../stat */
 void parse (char* origin, char* destination)
 {
     int i;
@@ -65,6 +64,7 @@ void parse (char* origin, char* destination)
     } 
 }
 
+/*TOP FUNCTION. Opens the /proc/ diretory and from there opens each folder that is a process and prints its info on the screen.*/
 void *top()
 {
 	char garbage[50];
@@ -121,6 +121,7 @@ void *top()
     }
 }
 
+/*Function to cater I/O Signal to kill a process*/
 void *pidSig()
 {
 	while(1)
@@ -131,6 +132,7 @@ void *pidSig()
 	}
 }
 
+/*Main*/
 int main (int argc, char **argv)
 {	
 	pthread_t threads;
