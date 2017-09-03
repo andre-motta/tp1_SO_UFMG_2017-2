@@ -11,7 +11,7 @@
 #include <pwd.h>
 #include <pthread.h>
 
-#define Nthreads = 2
+#define Nthreads 2
 
 /* A linked list node */
 struct Node
