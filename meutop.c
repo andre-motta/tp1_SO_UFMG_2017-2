@@ -101,7 +101,7 @@ void top()
                 parse(garbage, &(head->name[0]));            
                 stat(final_str, &(head->Stat));
                 head->pwd = getpwuid(head->Stat.st_uid);
-                printf("|%-6d|%-10s|%-10s|  %c   |\n", head->pid, head->pwd->pw_name, head->name, head->status);
+                printf("|%-6d|%-10.10s|%-10.10s|  %c   |\n", head->pid, head->pwd->pw_name, head->name, head->status);
                 count ++;
                 fclose(current);
                 free(head);
