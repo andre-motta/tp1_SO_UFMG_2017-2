@@ -11,7 +11,6 @@
 #include <pwd.h>
 #include <pthread.h>
 
-#define Nthreads 2
 
 /* A linked list node */
 struct Node
@@ -82,7 +81,7 @@ void *top()
         if (dp == NULL) 
         {
             perror("opendir");
-            return;
+            pthread_exit(NULL);
         }
         printf("| PID  |   USER   |   NOME   |STATUS|\n|------|----------|----------|------|\n");
         int count =0;
@@ -107,8 +106,7 @@ void *top()
                 fclose(current);
                 free(head);
                 free(final_str);
-                if (count == 17) break;
-
+                if (count == 20) break;
                
             }
         }
@@ -116,7 +114,7 @@ void *top()
         closedir(dp);
         
         
-        sleep(3); 
+        sleep(1); 
         clear();
         i++;  
 
@@ -129,15 +127,14 @@ void *pidSig()
 	{
 		int pid, sig;
 		scanf("%d %d", &pid, &sig);
-		kill(pid, sig);
+	    kill(pid, sig);
 	}
 }
 
 int main (int argc, char **argv)
 {	
-	pthread_t threads[Nthreads];
-	pthread_create(&(threads[0]), NULL, top, NULL);
-	pthread_create(&(threads[1]), NULL, pidSig, NULL); 
-    //top();
+	pthread_t threads;
+	pthread_create(&(threads), NULL, top, NULL);
+    pidSig();
     return 0;
 }
