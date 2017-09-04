@@ -126,8 +126,8 @@ void *pidSig()
 {
 	while(1)
 	{
-		int pid, sig;
-		scanf("%d %d", &pid, &sig);
+	    int pid, sig;
+	    scanf("%d %d", &pid, &sig);
 	    kill(pid, sig);
 	}
 }
@@ -135,8 +135,8 @@ void *pidSig()
 /*Main*/
 int main (int argc, char **argv)
 {	
-	pthread_t threads;
-	pthread_create(&(threads), NULL, top, NULL);
+    pthread_t threads;
+    pthread_create(&(threads), NULL, top, NULL);
     pidSig();
     return 0;
 }
