@@ -28,7 +28,7 @@ struct Node
 /*Function to print escape lines so that the screen updates fully with no system call better than system("clear");*/
 void clear()
 {
- printf("\033[H\033[J"); 
+     printf("\033[H\033[J"); 
 }
 
 

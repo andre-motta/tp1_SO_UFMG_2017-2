@@ -63,7 +63,8 @@ void runcmd(struct cmd *cmd)
   if(cmd == 0)
     exit(0);
   
-  switch(cmd->type){
+  switch(cmd->type)
+  {
   default:
     fprintf(stderr, "tipo de comando desconhecido\n");
     exit(-1);
@@ -98,14 +99,16 @@ void runcmd(struct cmd *cmd)
     /* Pipes case, executes everything and dups the entries. */
     if(pipe(p)<0)
       perror("pipe");
-    if(fork1()==0){
+    if(fork1()==0)
+    {
       close(1);
       dup(p[1]);
       close(p[0]);
       close(p[2]);
       runcmd(pcmd->left);
     }
-    if(fork1()==0){
+    if(fork1()==0)
+    {
       close(0);
       dup(p[0]);
       close(p[0]);
