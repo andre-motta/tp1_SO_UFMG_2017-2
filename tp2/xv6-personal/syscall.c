@@ -104,6 +104,7 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_date(void);
+extern int sys_num_pages(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,

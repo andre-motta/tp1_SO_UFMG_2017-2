@@ -102,13 +102,23 @@ sys_date(void)
   return 0;
 
 }
+
 char*
 virt2real(char *va)
 {
-  struct proc *curproc = myproc();
+  /*struct proc *curproc = myproc();
   pte_t * realAddr = walkpgdir(curproc->pgdir,(const void *) va, 0);
 
-  (pte_t *) va = realAddr;
+  (pte_t *) va = realAddr;*/
 
   return va;
+}
+
+int
+num_pages(void)
+{
+  struct proc *curproc = myproc();
+  int pages = curproc->sz/PGSIZE;
+
+  return pages;
 }
