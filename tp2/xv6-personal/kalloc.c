@@ -21,6 +21,7 @@ struct {
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
+  uint pageRefCount[PHYSTOP>>PGSHIFT];
 } kmem;
 
 // Initialization happens in two phases.
@@ -94,3 +95,43 @@ kalloc(void)
   return (char*)r;
 }
 
+void
+addRefCount(uint value)
+{
+  if((value < (uint)(V2P(end))) || (value >= PHYSTOP))
+  {
+    panic("Acesso invalido");
+  }
+  acquire(&kmem.lock);
+  (kmem.pageRefCount[value>>PGSHIFT])++;
+  release(&kmem.lock);   
+
+}
+
+void
+minusRefCount(uint value)
+{
+  if((value < (uint)(V2P(end))) || (value >= PHYSTOP))
+  {
+    panic("Acesso invalido");
+  }
+  acquire(&kmem.lock);
+  (kmem.pageRefCount[value>>PGSHIFT])--;
+  release(&kmem.lock);   
+
+}
+
+uint
+getRefCount(uint value)
+{
+  if((value < (uint)(V2P(end))) || (value >= PHYSTOP))
+  {
+    panic("Acesso invalido");
+  }
+  uint count;
+  acquire(&kmem.lock);
+  count = kmem.pageRefCount[value>>PGSHIFT];  
+  release(&kmem.lock);
+     
+  return count;
+}

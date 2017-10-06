@@ -342,6 +342,39 @@ bad:
   return 0;
 }
 
+// Given a parent process's page table, create a copy
+// of it for a child.
+pde_t*
+copyuvmcow(pde_t *pgdir, uint sz)
+{
+  pde_t *d;
+  pte_t *pte;
+  uint pa, i, flags; 
+
+  if((d = setupkvm()) == 0)
+    return 0;
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+      panic("copyuvm: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("copyuvm: page not present");
+    *pte &= ~PTE_W; 
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+    addRefCount(pa);
+  }
+  lcr3(V2P(pgdir));
+  return d;
+//         setar bit extra como flag de cow(flag PTE_COW)
+//         implementar trap de PAGEFAULT
+bad:
+  freevm(d);
+  lcr3(V2P(pgdir));
+  return 0;
+}
+
 //PAGEBREAK!
 // Map user virtual address to kernel address.
 char*

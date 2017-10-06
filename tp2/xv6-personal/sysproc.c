@@ -119,7 +119,7 @@ int
 sys_num_pages(void)
 {
   struct proc *curproc = myproc();
-  int temp = curproc->sz/PGSIZE;
+  int temp = curproc->sz>>PGSHIFT;
   int temp2 = curproc->sz % PGSIZE;
   if(temp2 == 0){
     return temp;
