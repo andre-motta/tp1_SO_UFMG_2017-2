@@ -23,7 +23,7 @@
 00000ae0 strcpy
 00000e80 printf
 00000cf0 memmove
-00000dca num_pages
+00000dd2 num_pages
 00000d6a mknod
 00000350 execcmd
 00000bf0 gets

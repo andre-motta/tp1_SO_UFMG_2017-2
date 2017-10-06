@@ -5,6 +5,12 @@ _zombie:     file format elf32-i386
 Disassembly of section .text:
 
 00000000 <main>:
+#include "stat.h"
+#include "user.h"
+
+int
+main(void)
+{
    0:	8d 4c 24 04          	lea    0x4(%esp),%ecx
    4:	83 e4 f0             	and    $0xfffffff0,%esp
    7:	ff 71 fc             	pushl  -0x4(%ecx)
@@ -12,13 +18,16 @@ Disassembly of section .text:
    b:	89 e5                	mov    %esp,%ebp
    d:	51                   	push   %ecx
    e:	83 ec 04             	sub    $0x4,%esp
+  if(fork() > 0)
   11:	e8 54 02 00 00       	call   26a <fork>
   16:	85 c0                	test   %eax,%eax
   18:	7e 0d                	jle    27 <main+0x27>
+    sleep(5);  // Let child exit before parent.
   1a:	83 ec 0c             	sub    $0xc,%esp
   1d:	6a 05                	push   $0x5
   1f:	e8 de 02 00 00       	call   302 <sleep>
   24:	83 c4 10             	add    $0x10,%esp
+  exit();
   27:	e8 46 02 00 00       	call   272 <exit>
   2c:	66 90                	xchg   %ax,%ax
   2e:	66 90                	xchg   %ax,%ax
@@ -651,21 +660,17 @@ SYSCALL(date)
  317:	cd 40                	int    $0x40
  319:	c3                   	ret    
 
-<<<<<<< HEAD
-0000031a <num_pages>:
-SYSCALL(num_pages)
- 31a:	b8 18 00 00 00       	mov    $0x18,%eax
-=======
 0000031a <virt2real>:
 SYSCALL(virt2real)
  31a:	b8 17 00 00 00       	mov    $0x17,%eax
->>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  31f:	cd 40                	int    $0x40
  321:	c3                   	ret    
- 322:	66 90                	xchg   %ax,%ax
- 324:	66 90                	xchg   %ax,%ax
- 326:	66 90                	xchg   %ax,%ax
- 328:	66 90                	xchg   %ax,%ax
+
+00000322 <num_pages>:
+SYSCALL(num_pages)
+ 322:	b8 18 00 00 00       	mov    $0x18,%eax
+ 327:	cd 40                	int    $0x40
+ 329:	c3                   	ret    
  32a:	66 90                	xchg   %ax,%ax
  32c:	66 90                	xchg   %ax,%ax
  32e:	66 90                	xchg   %ax,%ax

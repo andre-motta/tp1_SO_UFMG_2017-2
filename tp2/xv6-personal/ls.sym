@@ -23,7 +23,7 @@
 00000060 fmtname
 000006e0 printf
 00000550 memmove
-0000062a num_pages
+00000632 num_pages
 000005ca mknod
 00000450 gets
 00000602 getpid

@@ -26,7 +26,7 @@
 00005db4 stdout
 00003270 bigargtest
 00003870 memmove
-0000394a num_pages
+00003952 num_pages
 000002f0 openiputtest
 000038ea mknod
 00003770 gets

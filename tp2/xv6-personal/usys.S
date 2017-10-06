@@ -32,4 +32,3 @@ SYSCALL(uptime)
 SYSCALL(date)
 SYSCALL(virt2real)
 SYSCALL(num_pages)
-

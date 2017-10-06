@@ -722,21 +722,17 @@ SYSCALL(date)
  367:	cd 40                	int    $0x40
  369:	c3                   	ret    
 
-<<<<<<< HEAD
-0000036a <num_pages>:
-SYSCALL(num_pages)
- 36a:	b8 18 00 00 00       	mov    $0x18,%eax
-=======
 0000036a <virt2real>:
 SYSCALL(virt2real)
  36a:	b8 17 00 00 00       	mov    $0x17,%eax
->>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  36f:	cd 40                	int    $0x40
  371:	c3                   	ret    
- 372:	66 90                	xchg   %ax,%ax
- 374:	66 90                	xchg   %ax,%ax
- 376:	66 90                	xchg   %ax,%ax
- 378:	66 90                	xchg   %ax,%ax
+
+00000372 <num_pages>:
+SYSCALL(num_pages)
+ 372:	b8 18 00 00 00       	mov    $0x18,%eax
+ 377:	cd 40                	int    $0x40
+ 379:	c3                   	ret    
  37a:	66 90                	xchg   %ax,%ax
  37c:	66 90                	xchg   %ax,%ax
  37e:	66 90                	xchg   %ax,%ax

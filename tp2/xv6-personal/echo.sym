@@ -21,7 +21,7 @@
 00000070 strcpy
 00000410 printf
 00000280 memmove
-0000035a num_pages
+00000362 num_pages
 000002fa mknod
 00000180 gets
 00000332 getpid

@@ -6,7 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-
+#include <stdio.h>
 int
 sys_fork(void)
 {
@@ -116,10 +116,15 @@ sys_virt2real(char *va)
 }
 
 int
-num_pages(void)
+sys_num_pages(void)
 {
   struct proc *curproc = myproc();
-  int pages = curproc->sz/PGSIZE;
-
-  return pages;
+  int temp = curproc->sz/PGSIZE;
+  int temp2 = curproc->sz % PGSIZE;
+  if(temp2 == 0){
+    return temp;
+  }
+  else{
+    return (temp+1);
+  }
 }

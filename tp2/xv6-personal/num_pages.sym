@@ -23,7 +23,7 @@
 000003f0 printf
 000009d4 stdout
 00000260 memmove
-0000033a num_pages
+00000342 num_pages
 000002da mknod
 00000160 gets
 00000312 getpid
@@ -37,6 +37,7 @@
 000002ca exec
 0000029a wait
 000002aa read
+0000033a virt2real
 000002e2 unlink
 0000028a fork
 0000031a sbrk

@@ -23,7 +23,7 @@
 00000490 printf
 00000aa4 argv
 00000300 memmove
-000003da num_pages
+000003e2 num_pages
 0000037a mknod
 00000200 gets
 000003b2 getpid

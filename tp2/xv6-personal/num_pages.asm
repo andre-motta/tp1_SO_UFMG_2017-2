@@ -19,7 +19,7 @@ main(int argc, char *argv[])
    d:	51                   	push   %ecx
    e:	83 ec 04             	sub    $0x4,%esp
     int pages = num_pages();
-  11:	e8 24 03 00 00       	call   33a <num_pages>
+  11:	e8 2c 03 00 00       	call   342 <num_pages>
     if(pages < 0){
   16:	85 c0                	test   %eax,%eax
   18:	78 19                	js     33 <main+0x33>
@@ -680,15 +680,17 @@ SYSCALL(date)
  337:	cd 40                	int    $0x40
  339:	c3                   	ret    
 
-0000033a <num_pages>:
-SYSCALL(num_pages)
- 33a:	b8 18 00 00 00       	mov    $0x18,%eax
+0000033a <virt2real>:
+SYSCALL(virt2real)
+ 33a:	b8 17 00 00 00       	mov    $0x17,%eax
  33f:	cd 40                	int    $0x40
  341:	c3                   	ret    
- 342:	66 90                	xchg   %ax,%ax
- 344:	66 90                	xchg   %ax,%ax
- 346:	66 90                	xchg   %ax,%ax
- 348:	66 90                	xchg   %ax,%ax
+
+00000342 <num_pages>:
+SYSCALL(num_pages)
+ 342:	b8 18 00 00 00       	mov    $0x18,%eax
+ 347:	cd 40                	int    $0x40
+ 349:	c3                   	ret    
  34a:	66 90                	xchg   %ax,%ax
  34c:	66 90                	xchg   %ax,%ax
  34e:	66 90                	xchg   %ax,%ax

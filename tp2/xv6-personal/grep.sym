@@ -22,7 +22,7 @@
 000006c0 printf
 00000530 memmove
 00000110 matchhere
-0000060a num_pages
+00000612 num_pages
 000005aa mknod
 00000430 gets
 000005e2 getpid
