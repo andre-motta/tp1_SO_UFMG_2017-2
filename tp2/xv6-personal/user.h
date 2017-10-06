@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int date(void*);
-char* virt2real(char *va);
+char* virt2real(void*);
 int num_pages(void);
 
 // ulib.c
