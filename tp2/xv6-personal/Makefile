@@ -175,11 +175,8 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_date\
-<<<<<<< HEAD
+    _virt2real\
     _num_pages\
-=======
-	_virt2real\
->>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
