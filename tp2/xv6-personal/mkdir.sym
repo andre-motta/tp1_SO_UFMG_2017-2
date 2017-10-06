@@ -35,6 +35,7 @@
 000002fa exec
 000002ca wait
 000002da read
+0000036a virt2real
 00000312 unlink
 000002ba fork
 0000034a sbrk

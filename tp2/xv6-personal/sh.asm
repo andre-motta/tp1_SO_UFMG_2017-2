@@ -2613,9 +2613,15 @@ SYSCALL(date)
      dc7:	cd 40                	int    $0x40
      dc9:	c3                   	ret    
 
+<<<<<<< HEAD
 00000dca <num_pages>:
 SYSCALL(num_pages)
      dca:	b8 18 00 00 00       	mov    $0x18,%eax
+=======
+00000dca <virt2real>:
+SYSCALL(virt2real)
+     dca:	b8 17 00 00 00       	mov    $0x17,%eax
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
      dcf:	cd 40                	int    $0x40
      dd1:	c3                   	ret    
      dd2:	66 90                	xchg   %ax,%ax

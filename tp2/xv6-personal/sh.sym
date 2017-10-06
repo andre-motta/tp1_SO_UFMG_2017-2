@@ -53,6 +53,7 @@
 00001840 symbols
 00000d3a read
 00000710 parseexec
+00000dca virt2real
 00000d72 unlink
 00000160 panic
 00000d1a fork

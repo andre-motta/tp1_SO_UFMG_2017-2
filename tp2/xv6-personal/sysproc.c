@@ -103,15 +103,16 @@ sys_date(void)
 
 }
 
-char*
-virt2real(char *va)
+int
+sys_virt2real(char *va)
 {
-  /*struct proc *curproc = myproc();
-  pte_t * realAddr = walkpgdir(curproc->pgdir,(const void *) va, 0);
+  struct proc *curproc = myproc();
+  pde_t *pde;
+  pte_t *pgtab;
+  pde = &(curproc->pgdir)[PDX(va)];
+  pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+  return (int)pgtab[PTX(va)];
 
-  (pte_t *) va = realAddr;*/
-
-  return va;
 }
 
 int

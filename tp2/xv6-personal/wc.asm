@@ -48,6 +48,10 @@ Disassembly of section .text:
   6e:	68 63 08 00 00       	push   $0x863
   73:	6a 01                	push   $0x1
   75:	e8 a6 04 00 00       	call   520 <printf>
+<<<<<<< HEAD
+=======
+      exit();
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
   7a:	e8 43 03 00 00       	call   3c2 <exit>
   7f:	52                   	push   %edx
   80:	52                   	push   %edx
@@ -99,6 +103,15 @@ Disassembly of section .text:
  100:	83 ec 08             	sub    $0x8,%esp
  103:	50                   	push   %eax
  104:	68 40 08 00 00       	push   $0x840
+<<<<<<< HEAD
+=======
+  inword = 0;
+  while((n = read(fd, buf, sizeof(buf))) > 0){
+    for(i=0; i<n; i++){
+      c++;
+      if(buf[i] == '\n')
+        l++;
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  109:	01 cb                	add    %ecx,%ebx
  10b:	e8 40 01 00 00       	call   250 <strchr>
  110:	83 c4 10             	add    $0x10,%esp
@@ -126,6 +139,10 @@ Disassembly of section .text:
  14e:	68 56 08 00 00       	push   $0x856
  153:	6a 01                	push   $0x1
  155:	e8 c6 03 00 00       	call   520 <printf>
+<<<<<<< HEAD
+=======
+}
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  15a:	83 c4 20             	add    $0x20,%esp
  15d:	8d 65 f4             	lea    -0xc(%ebp),%esp
  160:	5b                   	pop    %ebx
@@ -137,6 +154,10 @@ Disassembly of section .text:
  168:	68 46 08 00 00       	push   $0x846
  16d:	6a 01                	push   $0x1
  16f:	e8 ac 03 00 00       	call   520 <printf>
+<<<<<<< HEAD
+=======
+    exit();
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  174:	e8 49 02 00 00       	call   3c2 <exit>
  179:	66 90                	xchg   %ax,%ax
  17b:	66 90                	xchg   %ax,%ax
@@ -771,9 +792,15 @@ SYSCALL(date)
  467:	cd 40                	int    $0x40
  469:	c3                   	ret    
 
+<<<<<<< HEAD
 0000046a <num_pages>:
 SYSCALL(num_pages)
  46a:	b8 18 00 00 00       	mov    $0x18,%eax
+=======
+0000046a <virt2real>:
+SYSCALL(virt2real)
+ 46a:	b8 17 00 00 00       	mov    $0x17,%eax
+>>>>>>> 1d0b9bd4bc013404526f1ed835c20d26cc25026d
  46f:	cd 40                	int    $0x40
  471:	c3                   	ret    
  472:	66 90                	xchg   %ax,%ax

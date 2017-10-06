@@ -60,6 +60,7 @@
 00003640 rand
 000038ba read
 00000ba0 preempt
+0000394a virt2real
 000038f2 unlink
 000035d0 argptest
 00000d70 mem
