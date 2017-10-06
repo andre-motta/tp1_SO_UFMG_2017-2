@@ -11,41 +11,16 @@ Disassembly of section .text:
 8010000b:	e4                   	.byte 0xe4
 
 8010000c <entry>:
-
-# Entering xv6 on boot processor, with paging off.
-.globl entry
-entry:
-  # Turn on page size extension for 4Mbyte pages
-  movl    %cr4, %eax
 8010000c:	0f 20 e0             	mov    %cr4,%eax
-  orl     $(CR4_PSE), %eax
 8010000f:	83 c8 10             	or     $0x10,%eax
-  movl    %eax, %cr4
 80100012:	0f 22 e0             	mov    %eax,%cr4
-  # Set page directory
-  movl    $(V2P_WO(entrypgdir)), %eax
 80100015:	b8 00 90 10 00       	mov    $0x109000,%eax
-  movl    %eax, %cr3
 8010001a:	0f 22 d8             	mov    %eax,%cr3
-  # Turn on paging.
-  movl    %cr0, %eax
 8010001d:	0f 20 c0             	mov    %cr0,%eax
-  orl     $(CR0_PG|CR0_WP), %eax
 80100020:	0d 00 00 01 80       	or     $0x80010000,%eax
-  movl    %eax, %cr0
 80100025:	0f 22 c0             	mov    %eax,%cr0
-
-  # Set up the stack pointer.
-  movl $(stack + KSTACKSIZE), %esp
 80100028:	bc c0 b5 10 80       	mov    $0x8010b5c0,%esp
-
-  # Jump to main(), and switch to executing at
-  # high addresses. The indirect call is needed because
-  # the assembler produces a PC-relative instruction
-  # for a direct jump.
-  mov $main, %eax
 8010002d:	b8 60 2e 10 80       	mov    $0x80102e60,%eax
-  jmp *%eax
 80100032:	ff e0                	jmp    *%eax
 80100034:	66 90                	xchg   %ax,%ax
 80100036:	66 90                	xchg   %ax,%ax
@@ -13024,42 +12999,18 @@ strlen(const char *s)
 8010466a:	c3                   	ret    
 
 8010466b <swtch>:
-# Save current register context in old
-# and then load register context from new.
-
-.globl swtch
-swtch:
-  movl 4(%esp), %eax
 8010466b:	8b 44 24 04          	mov    0x4(%esp),%eax
-  movl 8(%esp), %edx
 8010466f:	8b 54 24 08          	mov    0x8(%esp),%edx
-
-  # Save old callee-save registers
-  pushl %ebp
 80104673:	55                   	push   %ebp
-  pushl %ebx
 80104674:	53                   	push   %ebx
-  pushl %esi
 80104675:	56                   	push   %esi
-  pushl %edi
 80104676:	57                   	push   %edi
-
-  # Switch stacks
-  movl %esp, (%eax)
 80104677:	89 20                	mov    %esp,(%eax)
-  movl %edx, %esp
 80104679:	89 d4                	mov    %edx,%esp
-
-  # Load new callee-save registers
-  popl %edi
 8010467b:	5f                   	pop    %edi
-  popl %esi
 8010467c:	5e                   	pop    %esi
-  popl %ebx
 8010467d:	5b                   	pop    %ebx
-  popl %ebp
 8010467e:	5d                   	pop    %ebp
-  ret
 8010467f:	c3                   	ret    
 
 80104680 <fetchint>:
@@ -16159,56 +16110,25 @@ sys_num_pages(void)
 801056af:	c3                   	ret    
 
 801056b0 <alltraps>:
-
-  # vectors.S sends all traps here.
-.globl alltraps
-alltraps:
-  # Build trap frame.
-  pushl %ds
 801056b0:	1e                   	push   %ds
-  pushl %es
 801056b1:	06                   	push   %es
-  pushl %fs
 801056b2:	0f a0                	push   %fs
-  pushl %gs
 801056b4:	0f a8                	push   %gs
-  pushal
 801056b6:	60                   	pusha  
-  
-  # Set up data segments.
-  movw $(SEG_KDATA<<3), %ax
 801056b7:	66 b8 10 00          	mov    $0x10,%ax
-  movw %ax, %ds
 801056bb:	8e d8                	mov    %eax,%ds
-  movw %ax, %es
 801056bd:	8e c0                	mov    %eax,%es
-
-  # Call trap(tf), where tf=%esp
-  pushl %esp
 801056bf:	54                   	push   %esp
-  call trap
 801056c0:	e8 eb 00 00 00       	call   801057b0 <trap>
-  addl $4, %esp
 801056c5:	83 c4 04             	add    $0x4,%esp
 
 801056c8 <trapret>:
-
-  # Return falls through to trapret...
-.globl trapret
-trapret:
-  popal
 801056c8:	61                   	popa   
-  popl %gs
 801056c9:	0f a9                	pop    %gs
-  popl %fs
 801056cb:	0f a1                	pop    %fs
-  popl %es
 801056cd:	07                   	pop    %es
-  popl %ds
 801056ce:	1f                   	pop    %ds
-  addl $0x8, %esp  # trapno and errcode
 801056cf:	83 c4 08             	add    $0x8,%esp
-  iret
 801056d2:	cf                   	iret   
 801056d3:	66 90                	xchg   %ax,%ax
 801056d5:	66 90                	xchg   %ax,%ax
@@ -19546,59 +19466,24 @@ vector255:
 801065ef:	90                   	nop
 
 801065f0 <walkpgdir>:
-// Return the address of the PTE in page table pgdir
-// that corresponds to virtual address va.  If alloc!=0,
-// create any required page table pages.
-static pte_t *
-walkpgdir(pde_t *pgdir, const void *va, int alloc)
-{
 801065f0:	55                   	push   %ebp
 801065f1:	89 e5                	mov    %esp,%ebp
 801065f3:	57                   	push   %edi
 801065f4:	56                   	push   %esi
 801065f5:	53                   	push   %ebx
 801065f6:	89 d3                	mov    %edx,%ebx
-  pde_t *pde;
-  pte_t *pgtab;
-
-  pde = &pgdir[PDX(va)];
 801065f8:	c1 ea 16             	shr    $0x16,%edx
 801065fb:	8d 3c 90             	lea    (%eax,%edx,4),%edi
-// Return the address of the PTE in page table pgdir
-// that corresponds to virtual address va.  If alloc!=0,
-// create any required page table pages.
-static pte_t *
-walkpgdir(pde_t *pgdir, const void *va, int alloc)
-{
 801065fe:	83 ec 0c             	sub    $0xc,%esp
-  pde_t *pde;
-  pte_t *pgtab;
-
-  pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
 80106601:	8b 07                	mov    (%edi),%eax
 80106603:	a8 01                	test   $0x1,%al
 80106605:	74 29                	je     80106630 <walkpgdir+0x40>
-    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
 80106607:	25 00 f0 ff ff       	and    $0xfffff000,%eax
 8010660c:	8d b0 00 00 00 80    	lea    -0x80000000(%eax),%esi
-    // be further restricted by the permissions in the page table
-    // entries, if necessary.
-    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
-  }
-  return &pgtab[PTX(va)];
-}
 80106612:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    // The permissions here are overly generous, but they can
-    // be further restricted by the permissions in the page table
-    // entries, if necessary.
-    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
-  }
-  return &pgtab[PTX(va)];
 80106615:	c1 eb 0a             	shr    $0xa,%ebx
 80106618:	81 e3 fc 0f 00 00    	and    $0xffc,%ebx
 8010661e:	8d 04 1e             	lea    (%esi,%ebx,1),%eax
-}
 80106621:	5b                   	pop    %ebx
 80106622:	5e                   	pop    %esi
 80106623:	5f                   	pop    %edi
@@ -19606,53 +19491,25 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 80106625:	c3                   	ret    
 80106626:	8d 76 00             	lea    0x0(%esi),%esi
 80106629:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
-
-  pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
-    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
 80106630:	85 c9                	test   %ecx,%ecx
 80106632:	74 2c                	je     80106660 <walkpgdir+0x70>
 80106634:	e8 57 be ff ff       	call   80102490 <kalloc>
 80106639:	85 c0                	test   %eax,%eax
 8010663b:	89 c6                	mov    %eax,%esi
 8010663d:	74 21                	je     80106660 <walkpgdir+0x70>
-      return 0;
-    // Make sure all those PTE_P bits are zero.
-    memset(pgtab, 0, PGSIZE);
 8010663f:	83 ec 04             	sub    $0x4,%esp
 80106642:	68 00 10 00 00       	push   $0x1000
 80106647:	6a 00                	push   $0x0
 80106649:	50                   	push   %eax
 8010664a:	e8 c1 dd ff ff       	call   80104410 <memset>
-    // The permissions here are overly generous, but they can
-    // be further restricted by the permissions in the page table
-    // entries, if necessary.
-    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
 8010664f:	8d 86 00 00 00 80    	lea    -0x80000000(%esi),%eax
 80106655:	83 c4 10             	add    $0x10,%esp
 80106658:	83 c8 07             	or     $0x7,%eax
 8010665b:	89 07                	mov    %eax,(%edi)
 8010665d:	eb b3                	jmp    80106612 <walkpgdir+0x22>
 8010665f:	90                   	nop
-  }
-  return &pgtab[PTX(va)];
-}
 80106660:	8d 65 f4             	lea    -0xc(%ebp),%esp
-  pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
-    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
-      return 0;
 80106663:	31 c0                	xor    %eax,%eax
-    // be further restricted by the permissions in the page table
-    // entries, if necessary.
-    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
-  }
-  return &pgtab[PTX(va)];
-}
 80106665:	5b                   	pop    %ebx
 80106666:	5e                   	pop    %esi
 80106667:	5f                   	pop    %edi
@@ -19661,82 +19518,31 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 8010666a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 80106670 <mappages>:
-// Create PTEs for virtual addresses starting at va that refer to
-// physical addresses starting at pa. va and size might not
-// be page-aligned.
-static int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
-{
 80106670:	55                   	push   %ebp
 80106671:	89 e5                	mov    %esp,%ebp
 80106673:	57                   	push   %edi
 80106674:	56                   	push   %esi
 80106675:	53                   	push   %ebx
-  char *a, *last;
-  pte_t *pte;
-
-  a = (char*)PGROUNDDOWN((uint)va);
 80106676:	89 d3                	mov    %edx,%ebx
 80106678:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
-// Create PTEs for virtual addresses starting at va that refer to
-// physical addresses starting at pa. va and size might not
-// be page-aligned.
-static int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
-{
 8010667e:	83 ec 1c             	sub    $0x1c,%esp
 80106681:	89 45 e4             	mov    %eax,-0x1c(%ebp)
-  char *a, *last;
-  pte_t *pte;
-
-  a = (char*)PGROUNDDOWN((uint)va);
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
 80106684:	8d 44 0a ff          	lea    -0x1(%edx,%ecx,1),%eax
 80106688:	8b 7d 08             	mov    0x8(%ebp),%edi
 8010668b:	25 00 f0 ff ff       	and    $0xfffff000,%eax
 80106690:	89 45 e0             	mov    %eax,-0x20(%ebp)
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
-    if(*pte & PTE_P)
-      panic("remap");
-    *pte = pa | perm | PTE_P;
 80106693:	8b 45 0c             	mov    0xc(%ebp),%eax
 80106696:	29 df                	sub    %ebx,%edi
 80106698:	83 c8 01             	or     $0x1,%eax
 8010669b:	89 45 dc             	mov    %eax,-0x24(%ebp)
 8010669e:	eb 15                	jmp    801066b5 <mappages+0x45>
-  a = (char*)PGROUNDDOWN((uint)va);
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
-    if(*pte & PTE_P)
 801066a0:	f6 00 01             	testb  $0x1,(%eax)
 801066a3:	75 45                	jne    801066ea <mappages+0x7a>
-      panic("remap");
-    *pte = pa | perm | PTE_P;
 801066a5:	0b 75 dc             	or     -0x24(%ebp),%esi
-    if(a == last)
 801066a8:	3b 5d e0             	cmp    -0x20(%ebp),%ebx
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
-    if(*pte & PTE_P)
-      panic("remap");
-    *pte = pa | perm | PTE_P;
 801066ab:	89 30                	mov    %esi,(%eax)
-    if(a == last)
 801066ad:	74 31                	je     801066e0 <mappages+0x70>
-      break;
-    a += PGSIZE;
 801066af:	81 c3 00 10 00 00    	add    $0x1000,%ebx
-  pte_t *pte;
-
-  a = (char*)PGROUNDDOWN((uint)va);
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
 801066b5:	8b 45 e4             	mov    -0x1c(%ebp),%eax
 801066b8:	b9 01 00 00 00       	mov    $0x1,%ecx
 801066bd:	89 da                	mov    %ebx,%edx
@@ -19744,26 +19550,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 801066c2:	e8 29 ff ff ff       	call   801065f0 <walkpgdir>
 801066c7:	85 c0                	test   %eax,%eax
 801066c9:	75 d5                	jne    801066a0 <mappages+0x30>
-      break;
-    a += PGSIZE;
-    pa += PGSIZE;
-  }
-  return 0;
-}
 801066cb:	8d 65 f4             	lea    -0xc(%ebp),%esp
-
-  a = (char*)PGROUNDDOWN((uint)va);
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
 801066ce:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
-      break;
-    a += PGSIZE;
-    pa += PGSIZE;
-  }
-  return 0;
-}
 801066d3:	5b                   	pop    %ebx
 801066d4:	5e                   	pop    %esi
 801066d5:	5f                   	pop    %edi
@@ -19772,25 +19560,12 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 801066d8:	90                   	nop
 801066d9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 801066e0:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    if(a == last)
-      break;
-    a += PGSIZE;
-    pa += PGSIZE;
-  }
-  return 0;
 801066e3:	31 c0                	xor    %eax,%eax
-}
 801066e5:	5b                   	pop    %ebx
 801066e6:	5e                   	pop    %esi
 801066e7:	5f                   	pop    %edi
 801066e8:	5d                   	pop    %ebp
 801066e9:	c3                   	ret    
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
-  for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
-    if(*pte & PTE_P)
-      panic("remap");
 801066ea:	83 ec 0c             	sub    $0xc,%esp
 801066ed:	68 34 78 10 80       	push   $0x80107834
 801066f2:	e8 79 9c ff ff       	call   80100370 <panic>
@@ -19798,115 +19573,48 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 801066f9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 80106700 <deallocuvm.part.0>:
-// Deallocate user pages to bring the process size from oldsz to
-// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
-// need to be less than oldsz.  oldsz can be larger than the actual
-// process size.  Returns the new process size.
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106700:	55                   	push   %ebp
 80106701:	89 e5                	mov    %esp,%ebp
 80106703:	57                   	push   %edi
 80106704:	56                   	push   %esi
 80106705:	53                   	push   %ebx
-  uint a, pa;
-
-  if(newsz >= oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(newsz);
 80106706:	8d 99 ff 0f 00 00    	lea    0xfff(%ecx),%ebx
-// Deallocate user pages to bring the process size from oldsz to
-// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
-// need to be less than oldsz.  oldsz can be larger than the actual
-// process size.  Returns the new process size.
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 8010670c:	89 c7                	mov    %eax,%edi
-  uint a, pa;
-
-  if(newsz >= oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(newsz);
 8010670e:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
-// Deallocate user pages to bring the process size from oldsz to
-// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
-// need to be less than oldsz.  oldsz can be larger than the actual
-// process size.  Returns the new process size.
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106714:	83 ec 1c             	sub    $0x1c,%esp
 80106717:	89 4d e0             	mov    %ecx,-0x20(%ebp)
-
-  if(newsz >= oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(newsz);
-  for(; a  < oldsz; a += PGSIZE){
 8010671a:	39 d3                	cmp    %edx,%ebx
 8010671c:	73 66                	jae    80106784 <deallocuvm.part.0+0x84>
 8010671e:	89 d6                	mov    %edx,%esi
 80106720:	eb 3d                	jmp    8010675f <deallocuvm.part.0+0x5f>
 80106722:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
-    pte = walkpgdir(pgdir, (char*)a, 0);
-    if(!pte)
-      a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-    else if((*pte & PTE_P) != 0){
 80106728:	8b 10                	mov    (%eax),%edx
 8010672a:	f6 c2 01             	test   $0x1,%dl
 8010672d:	74 26                	je     80106755 <deallocuvm.part.0+0x55>
-      pa = PTE_ADDR(*pte);
-      if(pa == 0)
 8010672f:	81 e2 00 f0 ff ff    	and    $0xfffff000,%edx
 80106735:	74 58                	je     8010678f <deallocuvm.part.0+0x8f>
-        panic("kfree");
-      char *v = P2V(pa);
-      kfree(v);
 80106737:	83 ec 0c             	sub    $0xc,%esp
 8010673a:	81 c2 00 00 00 80    	add    $0x80000000,%edx
 80106740:	89 45 e4             	mov    %eax,-0x1c(%ebp)
 80106743:	52                   	push   %edx
 80106744:	e8 97 bb ff ff       	call   801022e0 <kfree>
-      *pte = 0;
 80106749:	8b 45 e4             	mov    -0x1c(%ebp),%eax
 8010674c:	83 c4 10             	add    $0x10,%esp
 8010674f:	c7 00 00 00 00 00    	movl   $0x0,(%eax)
-
-  if(newsz >= oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(newsz);
-  for(; a  < oldsz; a += PGSIZE){
 80106755:	81 c3 00 10 00 00    	add    $0x1000,%ebx
 8010675b:	39 f3                	cmp    %esi,%ebx
 8010675d:	73 25                	jae    80106784 <deallocuvm.part.0+0x84>
-    pte = walkpgdir(pgdir, (char*)a, 0);
 8010675f:	31 c9                	xor    %ecx,%ecx
 80106761:	89 da                	mov    %ebx,%edx
 80106763:	89 f8                	mov    %edi,%eax
 80106765:	e8 86 fe ff ff       	call   801065f0 <walkpgdir>
-    if(!pte)
 8010676a:	85 c0                	test   %eax,%eax
 8010676c:	75 ba                	jne    80106728 <deallocuvm.part.0+0x28>
-      a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
 8010676e:	81 e3 00 00 c0 ff    	and    $0xffc00000,%ebx
 80106774:	81 c3 00 f0 3f 00    	add    $0x3ff000,%ebx
-
-  if(newsz >= oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(newsz);
-  for(; a  < oldsz; a += PGSIZE){
 8010677a:	81 c3 00 10 00 00    	add    $0x1000,%ebx
 80106780:	39 f3                	cmp    %esi,%ebx
 80106782:	72 db                	jb     8010675f <deallocuvm.part.0+0x5f>
-      kfree(v);
-      *pte = 0;
-    }
-  }
-  return newsz;
-}
 80106784:	8b 45 e0             	mov    -0x20(%ebp),%eax
 80106787:	8d 65 f4             	lea    -0xc(%ebp),%esp
 8010678a:	5b                   	pop    %ebx
@@ -19914,143 +19622,74 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 8010678c:	5f                   	pop    %edi
 8010678d:	5d                   	pop    %ebp
 8010678e:	c3                   	ret    
-    if(!pte)
-      a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-    else if((*pte & PTE_P) != 0){
-      pa = PTE_ADDR(*pte);
-      if(pa == 0)
-        panic("kfree");
 8010678f:	83 ec 0c             	sub    $0xc,%esp
 80106792:	68 c6 71 10 80       	push   $0x801071c6
 80106797:	e8 d4 9b ff ff       	call   80100370 <panic>
 8010679c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 
 801067a0 <seginit>:
-
-// Set up CPU's kernel segment descriptors.
-// Run once on entry on each CPU.
-void
-seginit(void)
-{
 801067a0:	55                   	push   %ebp
 801067a1:	89 e5                	mov    %esp,%ebp
 801067a3:	83 ec 18             	sub    $0x18,%esp
-
-  // Map "logical" addresses to virtual addresses using identity map.
-  // Cannot share a CODE descriptor for both kernel and user
-  // because it would have to have DPL_USR, but the CPU forbids
-  // an interrupt from CPL=0 to DPL=3.
-  c = &cpus[cpuid()];
 801067a6:	e8 b5 cf ff ff       	call   80103760 <cpuid>
-  c->gdt[SEG_KCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, 0);
 801067ab:	69 c0 b0 00 00 00    	imul   $0xb0,%eax,%eax
 801067b1:	31 c9                	xor    %ecx,%ecx
 801067b3:	ba ff ff ff ff       	mov    $0xffffffff,%edx
 801067b8:	66 89 90 f8 27 11 80 	mov    %dx,-0x7feed808(%eax)
 801067bf:	66 89 88 fa 27 11 80 	mov    %cx,-0x7feed806(%eax)
-  c->gdt[SEG_KDATA] = SEG(STA_W, 0, 0xffffffff, 0);
 801067c6:	ba ff ff ff ff       	mov    $0xffffffff,%edx
 801067cb:	31 c9                	xor    %ecx,%ecx
 801067cd:	66 89 90 00 28 11 80 	mov    %dx,-0x7feed800(%eax)
-  c->gdt[SEG_UCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, DPL_USER);
 801067d4:	ba ff ff ff ff       	mov    $0xffffffff,%edx
-  // Cannot share a CODE descriptor for both kernel and user
-  // because it would have to have DPL_USR, but the CPU forbids
-  // an interrupt from CPL=0 to DPL=3.
-  c = &cpus[cpuid()];
-  c->gdt[SEG_KCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, 0);
-  c->gdt[SEG_KDATA] = SEG(STA_W, 0, 0xffffffff, 0);
 801067d9:	66 89 88 02 28 11 80 	mov    %cx,-0x7feed7fe(%eax)
-  c->gdt[SEG_UCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, DPL_USER);
 801067e0:	31 c9                	xor    %ecx,%ecx
 801067e2:	66 89 90 08 28 11 80 	mov    %dx,-0x7feed7f8(%eax)
 801067e9:	66 89 88 0a 28 11 80 	mov    %cx,-0x7feed7f6(%eax)
-  c->gdt[SEG_UDATA] = SEG(STA_W, 0, 0xffffffff, DPL_USER);
 801067f0:	ba ff ff ff ff       	mov    $0xffffffff,%edx
 801067f5:	31 c9                	xor    %ecx,%ecx
 801067f7:	66 89 90 10 28 11 80 	mov    %dx,-0x7feed7f0(%eax)
-  // Map "logical" addresses to virtual addresses using identity map.
-  // Cannot share a CODE descriptor for both kernel and user
-  // because it would have to have DPL_USR, but the CPU forbids
-  // an interrupt from CPL=0 to DPL=3.
-  c = &cpus[cpuid()];
-  c->gdt[SEG_KCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, 0);
 801067fe:	c6 80 fc 27 11 80 00 	movb   $0x0,-0x7feed804(%eax)
-static inline void
-lgdt(struct segdesc *p, int size)
-{
-  volatile ushort pd[3];
-
-  pd[0] = size-1;
 80106805:	ba 2f 00 00 00       	mov    $0x2f,%edx
 8010680a:	c6 80 fd 27 11 80 9a 	movb   $0x9a,-0x7feed803(%eax)
 80106811:	c6 80 fe 27 11 80 cf 	movb   $0xcf,-0x7feed802(%eax)
 80106818:	c6 80 ff 27 11 80 00 	movb   $0x0,-0x7feed801(%eax)
-  c->gdt[SEG_KDATA] = SEG(STA_W, 0, 0xffffffff, 0);
 8010681f:	c6 80 04 28 11 80 00 	movb   $0x0,-0x7feed7fc(%eax)
 80106826:	c6 80 05 28 11 80 92 	movb   $0x92,-0x7feed7fb(%eax)
 8010682d:	c6 80 06 28 11 80 cf 	movb   $0xcf,-0x7feed7fa(%eax)
 80106834:	c6 80 07 28 11 80 00 	movb   $0x0,-0x7feed7f9(%eax)
-  c->gdt[SEG_UCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, DPL_USER);
 8010683b:	c6 80 0c 28 11 80 00 	movb   $0x0,-0x7feed7f4(%eax)
 80106842:	c6 80 0d 28 11 80 fa 	movb   $0xfa,-0x7feed7f3(%eax)
 80106849:	c6 80 0e 28 11 80 cf 	movb   $0xcf,-0x7feed7f2(%eax)
 80106850:	c6 80 0f 28 11 80 00 	movb   $0x0,-0x7feed7f1(%eax)
-  c->gdt[SEG_UDATA] = SEG(STA_W, 0, 0xffffffff, DPL_USER);
 80106857:	66 89 88 12 28 11 80 	mov    %cx,-0x7feed7ee(%eax)
 8010685e:	c6 80 14 28 11 80 00 	movb   $0x0,-0x7feed7ec(%eax)
 80106865:	c6 80 15 28 11 80 f2 	movb   $0xf2,-0x7feed7eb(%eax)
 8010686c:	c6 80 16 28 11 80 cf 	movb   $0xcf,-0x7feed7ea(%eax)
 80106873:	c6 80 17 28 11 80 00 	movb   $0x0,-0x7feed7e9(%eax)
-  lgdt(c->gdt, sizeof(c->gdt));
 8010687a:	05 f0 27 11 80       	add    $0x801127f0,%eax
 8010687f:	66 89 55 f2          	mov    %dx,-0xe(%ebp)
-  pd[1] = (uint)p;
 80106883:	66 89 45 f4          	mov    %ax,-0xc(%ebp)
-  pd[2] = (uint)p >> 16;
 80106887:	c1 e8 10             	shr    $0x10,%eax
 8010688a:	66 89 45 f6          	mov    %ax,-0xa(%ebp)
-
-  asm volatile("lgdt (%0)" : : "r" (pd));
 8010688e:	8d 45 f2             	lea    -0xe(%ebp),%eax
 80106891:	0f 01 10             	lgdtl  (%eax)
-}
 80106894:	c9                   	leave  
 80106895:	c3                   	ret    
 80106896:	8d 76 00             	lea    0x0(%esi),%esi
 80106899:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 801068a0 <switchkvm>:
-}
-
-static inline void
-lcr3(uint val)
-{
-  asm volatile("movl %0,%%cr3" : : "r" (val));
 801068a0:	a1 a4 54 11 80       	mov    0x801154a4,%eax
-
-// Switch h/w page table register to the kernel-only page table,
-// for when no process is running.
-void
-switchkvm(void)
-{
 801068a5:	55                   	push   %ebp
 801068a6:	89 e5                	mov    %esp,%ebp
 801068a8:	05 00 00 00 80       	add    $0x80000000,%eax
 801068ad:	0f 22 d8             	mov    %eax,%cr3
-  lcr3(V2P(kpgdir));   // switch to the kernel page table
-}
 801068b0:	5d                   	pop    %ebp
 801068b1:	c3                   	ret    
 801068b2:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 801068b9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 801068c0 <switchuvm>:
-
-// Switch TSS and h/w page table to correspond to process p.
-void
-switchuvm(struct proc *p)
-{
 801068c0:	55                   	push   %ebp
 801068c1:	89 e5                	mov    %esp,%ebp
 801068c3:	57                   	push   %edi
@@ -20058,24 +19697,15 @@ switchuvm(struct proc *p)
 801068c5:	53                   	push   %ebx
 801068c6:	83 ec 1c             	sub    $0x1c,%esp
 801068c9:	8b 75 08             	mov    0x8(%ebp),%esi
-  if(p == 0)
 801068cc:	85 f6                	test   %esi,%esi
 801068ce:	0f 84 cd 00 00 00    	je     801069a1 <switchuvm+0xe1>
-    panic("switchuvm: no process");
-  if(p->kstack == 0)
 801068d4:	8b 46 08             	mov    0x8(%esi),%eax
 801068d7:	85 c0                	test   %eax,%eax
 801068d9:	0f 84 dc 00 00 00    	je     801069bb <switchuvm+0xfb>
-    panic("switchuvm: no kstack");
-  if(p->pgdir == 0)
 801068df:	8b 7e 04             	mov    0x4(%esi),%edi
 801068e2:	85 ff                	test   %edi,%edi
 801068e4:	0f 84 c4 00 00 00    	je     801069ae <switchuvm+0xee>
-    panic("switchuvm: no pgdir");
-
-  pushcli();
 801068ea:	e8 71 d9 ff ff       	call   80104260 <pushcli>
-  mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
 801068ef:	e8 ec cd ff ff       	call   801036e0 <mycpu>
 801068f4:	89 c3                	mov    %eax,%ebx
 801068f6:	e8 e5 cd ff ff       	call   801036e0 <mycpu>
@@ -20096,90 +19726,35 @@ switchuvm(struct proc *p)
 8010693a:	88 83 9f 00 00 00    	mov    %al,0x9f(%ebx)
 80106940:	c1 e9 10             	shr    $0x10,%ecx
 80106943:	88 8b 9c 00 00 00    	mov    %cl,0x9c(%ebx)
-  mycpu()->gdt[SEG_TSS].s = 0;
-  mycpu()->ts.ss0 = SEG_KDATA << 3;
-  mycpu()->ts.esp0 = (uint)p->kstack + KSTACKSIZE;
-  // setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
-  // forbids I/O instructions (e.g., inb and outb) from user space
-  mycpu()->ts.iomb = (ushort) 0xFFFF;
 80106949:	bb ff ff ff ff       	mov    $0xffffffff,%ebx
-    panic("switchuvm: no pgdir");
-
-  pushcli();
-  mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
-                                sizeof(mycpu()->ts)-1, 0);
-  mycpu()->gdt[SEG_TSS].s = 0;
 8010694e:	e8 8d cd ff ff       	call   801036e0 <mycpu>
 80106953:	80 a0 9d 00 00 00 ef 	andb   $0xef,0x9d(%eax)
-  mycpu()->ts.ss0 = SEG_KDATA << 3;
 8010695a:	e8 81 cd ff ff       	call   801036e0 <mycpu>
 8010695f:	b9 10 00 00 00       	mov    $0x10,%ecx
 80106964:	66 89 48 10          	mov    %cx,0x10(%eax)
-  mycpu()->ts.esp0 = (uint)p->kstack + KSTACKSIZE;
 80106968:	e8 73 cd ff ff       	call   801036e0 <mycpu>
 8010696d:	8b 56 08             	mov    0x8(%esi),%edx
 80106970:	8d 8a 00 10 00 00    	lea    0x1000(%edx),%ecx
 80106976:	89 48 0c             	mov    %ecx,0xc(%eax)
-  // setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
-  // forbids I/O instructions (e.g., inb and outb) from user space
-  mycpu()->ts.iomb = (ushort) 0xFFFF;
 80106979:	e8 62 cd ff ff       	call   801036e0 <mycpu>
 8010697e:	66 89 58 6e          	mov    %bx,0x6e(%eax)
-}
-
-static inline void
-ltr(ushort sel)
-{
-  asm volatile("ltr %0" : : "r" (sel));
 80106982:	b8 28 00 00 00       	mov    $0x28,%eax
 80106987:	0f 00 d8             	ltr    %ax
-}
-
-static inline void
-lcr3(uint val)
-{
-  asm volatile("movl %0,%%cr3" : : "r" (val));
 8010698a:	8b 46 04             	mov    0x4(%esi),%eax
 8010698d:	05 00 00 00 80       	add    $0x80000000,%eax
 80106992:	0f 22 d8             	mov    %eax,%cr3
-  ltr(SEG_TSS << 3);
-  lcr3(V2P(p->pgdir));  // switch to process's address space
-  popcli();
-}
 80106995:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106998:	5b                   	pop    %ebx
 80106999:	5e                   	pop    %esi
 8010699a:	5f                   	pop    %edi
 8010699b:	5d                   	pop    %ebp
-  // setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
-  // forbids I/O instructions (e.g., inb and outb) from user space
-  mycpu()->ts.iomb = (ushort) 0xFFFF;
-  ltr(SEG_TSS << 3);
-  lcr3(V2P(p->pgdir));  // switch to process's address space
-  popcli();
 8010699c:	e9 af d9 ff ff       	jmp    80104350 <popcli>
-// Switch TSS and h/w page table to correspond to process p.
-void
-switchuvm(struct proc *p)
-{
-  if(p == 0)
-    panic("switchuvm: no process");
 801069a1:	83 ec 0c             	sub    $0xc,%esp
 801069a4:	68 3a 78 10 80       	push   $0x8010783a
 801069a9:	e8 c2 99 ff ff       	call   80100370 <panic>
-  if(p->kstack == 0)
-    panic("switchuvm: no kstack");
-  if(p->pgdir == 0)
-    panic("switchuvm: no pgdir");
 801069ae:	83 ec 0c             	sub    $0xc,%esp
 801069b1:	68 65 78 10 80       	push   $0x80107865
 801069b6:	e8 b5 99 ff ff       	call   80100370 <panic>
-switchuvm(struct proc *p)
-{
-  if(p == 0)
-    panic("switchuvm: no process");
-  if(p->kstack == 0)
-    panic("switchuvm: no kstack");
 801069bb:	83 ec 0c             	sub    $0xc,%esp
 801069be:	68 50 78 10 80       	push   $0x80107850
 801069c3:	e8 a8 99 ff ff       	call   80100370 <panic>
@@ -20187,12 +19762,6 @@ switchuvm(struct proc *p)
 801069c9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 
 801069d0 <inituvm>:
-
-// Load the initcode into address 0 of pgdir.
-// sz must be less than a page.
-void
-inituvm(pde_t *pgdir, char *init, uint sz)
-{
 801069d0:	55                   	push   %ebp
 801069d1:	89 e5                	mov    %esp,%ebp
 801069d3:	57                   	push   %edi
@@ -20202,39 +19771,16 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 801069d9:	8b 75 10             	mov    0x10(%ebp),%esi
 801069dc:	8b 45 08             	mov    0x8(%ebp),%eax
 801069df:	8b 7d 0c             	mov    0xc(%ebp),%edi
-  char *mem;
-
-  if(sz >= PGSIZE)
 801069e2:	81 fe ff 0f 00 00    	cmp    $0xfff,%esi
-
-// Load the initcode into address 0 of pgdir.
-// sz must be less than a page.
-void
-inituvm(pde_t *pgdir, char *init, uint sz)
-{
 801069e8:	89 45 e4             	mov    %eax,-0x1c(%ebp)
-  char *mem;
-
-  if(sz >= PGSIZE)
 801069eb:	77 49                	ja     80106a36 <inituvm+0x66>
-    panic("inituvm: more than a page");
-  mem = kalloc();
 801069ed:	e8 9e ba ff ff       	call   80102490 <kalloc>
-  memset(mem, 0, PGSIZE);
 801069f2:	83 ec 04             	sub    $0x4,%esp
-{
-  char *mem;
-
-  if(sz >= PGSIZE)
-    panic("inituvm: more than a page");
-  mem = kalloc();
 801069f5:	89 c3                	mov    %eax,%ebx
-  memset(mem, 0, PGSIZE);
 801069f7:	68 00 10 00 00       	push   $0x1000
 801069fc:	6a 00                	push   $0x0
 801069fe:	50                   	push   %eax
 801069ff:	e8 0c da ff ff       	call   80104410 <memset>
-  mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
 80106a04:	58                   	pop    %eax
 80106a05:	8d 83 00 00 00 80    	lea    -0x80000000(%ebx),%eax
 80106a0b:	b9 00 10 00 00       	mov    $0x1000,%ecx
@@ -20244,30 +19790,16 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 80106a14:	31 d2                	xor    %edx,%edx
 80106a16:	8b 45 e4             	mov    -0x1c(%ebp),%eax
 80106a19:	e8 52 fc ff ff       	call   80106670 <mappages>
-  memmove(mem, init, sz);
 80106a1e:	89 75 10             	mov    %esi,0x10(%ebp)
 80106a21:	89 7d 0c             	mov    %edi,0xc(%ebp)
 80106a24:	83 c4 10             	add    $0x10,%esp
 80106a27:	89 5d 08             	mov    %ebx,0x8(%ebp)
-}
 80106a2a:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106a2d:	5b                   	pop    %ebx
 80106a2e:	5e                   	pop    %esi
 80106a2f:	5f                   	pop    %edi
 80106a30:	5d                   	pop    %ebp
-  if(sz >= PGSIZE)
-    panic("inituvm: more than a page");
-  mem = kalloc();
-  memset(mem, 0, PGSIZE);
-  mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
-  memmove(mem, init, sz);
 80106a31:	e9 8a da ff ff       	jmp    801044c0 <memmove>
-inituvm(pde_t *pgdir, char *init, uint sz)
-{
-  char *mem;
-
-  if(sz >= PGSIZE)
-    panic("inituvm: more than a page");
 80106a36:	83 ec 0c             	sub    $0xc,%esp
 80106a39:	68 79 78 10 80       	push   $0x80107879
 80106a3e:	e8 2d 99 ff ff       	call   80100370 <panic>
@@ -20275,26 +19807,14 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 80106a49:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 80106a50 <loaduvm>:
-
-// Load a program segment into pgdir.  addr must be page-aligned
-// and the pages from addr to addr+sz must already be mapped.
-int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
-{
 80106a50:	55                   	push   %ebp
 80106a51:	89 e5                	mov    %esp,%ebp
 80106a53:	57                   	push   %edi
 80106a54:	56                   	push   %esi
 80106a55:	53                   	push   %ebx
 80106a56:	83 ec 0c             	sub    $0xc,%esp
-  uint i, pa, n;
-  pte_t *pte;
-
-  if((uint) addr % PGSIZE != 0)
 80106a59:	f7 45 0c ff 0f 00 00 	testl  $0xfff,0xc(%ebp)
 80106a60:	0f 85 91 00 00 00    	jne    80106af7 <loaduvm+0xa7>
-    panic("loaduvm: addr must be page aligned");
-  for(i = 0; i < sz; i += PGSIZE){
 80106a66:	8b 75 18             	mov    0x18(%ebp),%esi
 80106a69:	31 db                	xor    %ebx,%ebx
 80106a6b:	85 f6                	test   %esi,%esi
@@ -20305,7 +19825,6 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 80106a7e:	81 ee 00 10 00 00    	sub    $0x1000,%esi
 80106a84:	39 5d 18             	cmp    %ebx,0x18(%ebp)
 80106a87:	76 57                	jbe    80106ae0 <loaduvm+0x90>
-    if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
 80106a89:	8b 55 0c             	mov    0xc(%ebp),%edx
 80106a8c:	8b 45 08             	mov    0x8(%ebp),%eax
 80106a8f:	31 c9                	xor    %ecx,%ecx
@@ -20313,36 +19832,12 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 80106a93:	e8 58 fb ff ff       	call   801065f0 <walkpgdir>
 80106a98:	85 c0                	test   %eax,%eax
 80106a9a:	74 4e                	je     80106aea <loaduvm+0x9a>
-      panic("loaduvm: address should exist");
-    pa = PTE_ADDR(*pte);
 80106a9c:	8b 00                	mov    (%eax),%eax
-    if(sz - i < PGSIZE)
-      n = sz - i;
-    else
-      n = PGSIZE;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
 80106a9e:	8b 4d 14             	mov    0x14(%ebp),%ecx
-    panic("loaduvm: addr must be page aligned");
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
-      panic("loaduvm: address should exist");
-    pa = PTE_ADDR(*pte);
-    if(sz - i < PGSIZE)
 80106aa1:	bf 00 10 00 00       	mov    $0x1000,%edi
-  if((uint) addr % PGSIZE != 0)
-    panic("loaduvm: addr must be page aligned");
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
-      panic("loaduvm: address should exist");
-    pa = PTE_ADDR(*pte);
 80106aa6:	25 00 f0 ff ff       	and    $0xfffff000,%eax
-    if(sz - i < PGSIZE)
 80106aab:	81 fe ff 0f 00 00    	cmp    $0xfff,%esi
 80106ab1:	0f 46 fe             	cmovbe %esi,%edi
-      n = sz - i;
-    else
-      n = PGSIZE;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
 80106ab4:	01 d9                	add    %ebx,%ecx
 80106ab6:	05 00 00 00 80       	add    $0x80000000,%eax
 80106abb:	57                   	push   %edi
@@ -20353,21 +19848,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 80106ac6:	83 c4 10             	add    $0x10,%esp
 80106ac9:	39 c7                	cmp    %eax,%edi
 80106acb:	74 ab                	je     80106a78 <loaduvm+0x28>
-      return -1;
-  }
-  return 0;
-}
 80106acd:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    if(sz - i < PGSIZE)
-      n = sz - i;
-    else
-      n = PGSIZE;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
-      return -1;
 80106ad0:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
-  }
-  return 0;
-}
 80106ad5:	5b                   	pop    %ebx
 80106ad6:	5e                   	pop    %esi
 80106ad7:	5f                   	pop    %edi
@@ -20375,34 +19857,15 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 80106ad9:	c3                   	ret    
 80106ada:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 80106ae0:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    else
-      n = PGSIZE;
-    if(readi(ip, P2V(pa), offset+i, n) != n)
-      return -1;
-  }
-  return 0;
 80106ae3:	31 c0                	xor    %eax,%eax
-}
 80106ae5:	5b                   	pop    %ebx
 80106ae6:	5e                   	pop    %esi
 80106ae7:	5f                   	pop    %edi
 80106ae8:	5d                   	pop    %ebp
 80106ae9:	c3                   	ret    
-
-  if((uint) addr % PGSIZE != 0)
-    panic("loaduvm: addr must be page aligned");
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
-      panic("loaduvm: address should exist");
 80106aea:	83 ec 0c             	sub    $0xc,%esp
 80106aed:	68 93 78 10 80       	push   $0x80107893
 80106af2:	e8 79 98 ff ff       	call   80100370 <panic>
-{
-  uint i, pa, n;
-  pte_t *pte;
-
-  if((uint) addr % PGSIZE != 0)
-    panic("loaduvm: addr must be page aligned");
 80106af7:	83 ec 0c             	sub    $0xc,%esp
 80106afa:	68 34 79 10 80       	push   $0x80107934
 80106aff:	e8 6c 98 ff ff       	call   80100370 <panic>
@@ -20410,12 +19873,6 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 80106b0a:	8d bf 00 00 00 00    	lea    0x0(%edi),%edi
 
 80106b10 <allocuvm>:
-
-// Allocate page tables and physical memory to grow process from oldsz to
-// newsz, which need not be page aligned.  Returns new size or 0 on error.
-int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
 80106b10:	55                   	push   %ebp
 80106b11:	89 e5                	mov    %esp,%ebp
 80106b13:	57                   	push   %edi
@@ -20423,46 +19880,22 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106b15:	53                   	push   %ebx
 80106b16:	83 ec 0c             	sub    $0xc,%esp
 80106b19:	8b 7d 10             	mov    0x10(%ebp),%edi
-  char *mem;
-  uint a;
-
-  if(newsz >= KERNBASE)
 80106b1c:	85 ff                	test   %edi,%edi
 80106b1e:	0f 88 ca 00 00 00    	js     80106bee <allocuvm+0xde>
-    return 0;
-  if(newsz < oldsz)
 80106b24:	3b 7d 0c             	cmp    0xc(%ebp),%edi
-    return oldsz;
 80106b27:	8b 45 0c             	mov    0xc(%ebp),%eax
-  char *mem;
-  uint a;
-
-  if(newsz >= KERNBASE)
-    return 0;
-  if(newsz < oldsz)
 80106b2a:	0f 82 82 00 00 00    	jb     80106bb2 <allocuvm+0xa2>
-    return oldsz;
-
-  a = PGROUNDUP(oldsz);
 80106b30:	8d 98 ff 0f 00 00    	lea    0xfff(%eax),%ebx
 80106b36:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
-  for(; a < newsz; a += PGSIZE){
 80106b3c:	39 df                	cmp    %ebx,%edi
 80106b3e:	77 43                	ja     80106b83 <allocuvm+0x73>
 80106b40:	e9 bb 00 00 00       	jmp    80106c00 <allocuvm+0xf0>
 80106b45:	8d 76 00             	lea    0x0(%esi),%esi
-    if(mem == 0){
-      cprintf("allocuvm out of memory\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      return 0;
-    }
-    memset(mem, 0, PGSIZE);
 80106b48:	83 ec 04             	sub    $0x4,%esp
 80106b4b:	68 00 10 00 00       	push   $0x1000
 80106b50:	6a 00                	push   $0x0
 80106b52:	50                   	push   %eax
 80106b53:	e8 b8 d8 ff ff       	call   80104410 <memset>
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
 80106b58:	58                   	pop    %eax
 80106b59:	8d 86 00 00 00 80    	lea    -0x80000000(%esi),%eax
 80106b5f:	b9 00 10 00 00       	mov    $0x1000,%ecx
@@ -20475,38 +19908,16 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106b72:	83 c4 10             	add    $0x10,%esp
 80106b75:	85 c0                	test   %eax,%eax
 80106b77:	78 47                	js     80106bc0 <allocuvm+0xb0>
-    return 0;
-  if(newsz < oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
 80106b79:	81 c3 00 10 00 00    	add    $0x1000,%ebx
 80106b7f:	39 df                	cmp    %ebx,%edi
 80106b81:	76 7d                	jbe    80106c00 <allocuvm+0xf0>
-    mem = kalloc();
 80106b83:	e8 08 b9 ff ff       	call   80102490 <kalloc>
-    if(mem == 0){
 80106b88:	85 c0                	test   %eax,%eax
-  if(newsz < oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
-    mem = kalloc();
 80106b8a:	89 c6                	mov    %eax,%esi
-    if(mem == 0){
 80106b8c:	75 ba                	jne    80106b48 <allocuvm+0x38>
-      cprintf("allocuvm out of memory\n");
 80106b8e:	83 ec 0c             	sub    $0xc,%esp
 80106b91:	68 b1 78 10 80       	push   $0x801078b1
 80106b96:	e8 c5 9a ff ff       	call   80100660 <cprintf>
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
-  pte_t *pte;
-  uint a, pa;
-
-  if(newsz >= oldsz)
 80106b9b:	83 c4 10             	add    $0x10,%esp
 80106b9e:	3b 7d 0c             	cmp    0xc(%ebp),%edi
 80106ba1:	76 4b                	jbe    80106bee <allocuvm+0xde>
@@ -20514,19 +19925,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106ba6:	8b 45 08             	mov    0x8(%ebp),%eax
 80106ba9:	89 fa                	mov    %edi,%edx
 80106bab:	e8 50 fb ff ff       	call   80106700 <deallocuvm.part.0>
-  for(; a < newsz; a += PGSIZE){
-    mem = kalloc();
-    if(mem == 0){
-      cprintf("allocuvm out of memory\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      return 0;
 80106bb0:	31 c0                	xor    %eax,%eax
-      kfree(mem);
-      return 0;
-    }
-  }
-  return newsz;
-}
 80106bb2:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106bb5:	5b                   	pop    %ebx
 80106bb6:	5e                   	pop    %esi
@@ -20534,21 +19933,9 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106bb8:	5d                   	pop    %ebp
 80106bb9:	c3                   	ret    
 80106bba:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
-      deallocuvm(pgdir, newsz, oldsz);
-      return 0;
-    }
-    memset(mem, 0, PGSIZE);
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
-      cprintf("allocuvm out of memory (2)\n");
 80106bc0:	83 ec 0c             	sub    $0xc,%esp
 80106bc3:	68 c9 78 10 80       	push   $0x801078c9
 80106bc8:	e8 93 9a ff ff       	call   80100660 <cprintf>
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
-  pte_t *pte;
-  uint a, pa;
-
-  if(newsz >= oldsz)
 80106bcd:	83 c4 10             	add    $0x10,%esp
 80106bd0:	3b 7d 0c             	cmp    0xc(%ebp),%edi
 80106bd3:	76 0d                	jbe    80106be2 <allocuvm+0xd2>
@@ -20556,33 +19943,12 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106bd8:	8b 45 08             	mov    0x8(%ebp),%eax
 80106bdb:	89 fa                	mov    %edi,%edx
 80106bdd:	e8 1e fb ff ff       	call   80106700 <deallocuvm.part.0>
-    }
-    memset(mem, 0, PGSIZE);
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
-      cprintf("allocuvm out of memory (2)\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      kfree(mem);
 80106be2:	83 ec 0c             	sub    $0xc,%esp
 80106be5:	56                   	push   %esi
 80106be6:	e8 f5 b6 ff ff       	call   801022e0 <kfree>
-      return 0;
 80106beb:	83 c4 10             	add    $0x10,%esp
-    }
-  }
-  return newsz;
-}
 80106bee:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    memset(mem, 0, PGSIZE);
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
-      cprintf("allocuvm out of memory (2)\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      kfree(mem);
-      return 0;
 80106bf1:	31 c0                	xor    %eax,%eax
-    }
-  }
-  return newsz;
-}
 80106bf3:	5b                   	pop    %ebx
 80106bf4:	5e                   	pop    %esi
 80106bf5:	5f                   	pop    %edi
@@ -20591,19 +19957,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106bf8:	90                   	nop
 80106bf9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 80106c00:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    return 0;
-  if(newsz < oldsz)
-    return oldsz;
-
-  a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
 80106c03:	89 f8                	mov    %edi,%eax
-      kfree(mem);
-      return 0;
-    }
-  }
-  return newsz;
-}
 80106c05:	5b                   	pop    %ebx
 80106c06:	5e                   	pop    %esi
 80106c07:	5f                   	pop    %edi
@@ -20612,29 +19966,13 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106c0a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 80106c10 <deallocuvm>:
-// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
-// need to be less than oldsz.  oldsz can be larger than the actual
-// process size.  Returns the new process size.
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
 80106c10:	55                   	push   %ebp
 80106c11:	89 e5                	mov    %esp,%ebp
 80106c13:	8b 55 0c             	mov    0xc(%ebp),%edx
 80106c16:	8b 4d 10             	mov    0x10(%ebp),%ecx
 80106c19:	8b 45 08             	mov    0x8(%ebp),%eax
-  pte_t *pte;
-  uint a, pa;
-
-  if(newsz >= oldsz)
 80106c1c:	39 d1                	cmp    %edx,%ecx
 80106c1e:	73 10                	jae    80106c30 <deallocuvm+0x20>
-      kfree(v);
-      *pte = 0;
-    }
-  }
-  return newsz;
-}
 80106c20:	5d                   	pop    %ebp
 80106c21:	e9 da fa ff ff       	jmp    80106700 <deallocuvm.part.0>
 80106c26:	8d 76 00             	lea    0x0(%esi),%esi
@@ -20646,12 +19984,6 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 80106c3a:	8d bf 00 00 00 00    	lea    0x0(%edi),%edi
 
 80106c40 <freevm>:
-
-// Free a page table and all the physical memory pages
-// in the user part.
-void
-freevm(pde_t *pgdir)
-{
 80106c40:	55                   	push   %ebp
 80106c41:	89 e5                	mov    %esp,%ebp
 80106c43:	57                   	push   %edi
@@ -20659,9 +19991,6 @@ freevm(pde_t *pgdir)
 80106c45:	53                   	push   %ebx
 80106c46:	83 ec 0c             	sub    $0xc,%esp
 80106c49:	8b 75 08             	mov    0x8(%ebp),%esi
-  uint i;
-
-  if(pgdir == 0)
 80106c4c:	85 f6                	test   %esi,%esi
 80106c4e:	74 59                	je     80106ca9 <freevm+0x69>
 80106c50:	31 c9                	xor    %ecx,%ecx
@@ -20674,17 +20003,11 @@ freevm(pde_t *pgdir)
 80106c68:	90                   	nop
 80106c69:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 80106c70:	83 c3 04             	add    $0x4,%ebx
-    panic("freevm: no pgdir");
-  deallocuvm(pgdir, KERNBASE, 0);
-  for(i = 0; i < NPDENTRIES; i++){
 80106c73:	39 fb                	cmp    %edi,%ebx
 80106c75:	74 23                	je     80106c9a <freevm+0x5a>
-    if(pgdir[i] & PTE_P){
 80106c77:	8b 03                	mov    (%ebx),%eax
 80106c79:	a8 01                	test   $0x1,%al
 80106c7b:	74 f3                	je     80106c70 <freevm+0x30>
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
 80106c7d:	25 00 f0 ff ff       	and    $0xfffff000,%eax
 80106c82:	83 ec 0c             	sub    $0xc,%esp
 80106c85:	83 c3 04             	add    $0x4,%ebx
@@ -20692,40 +20015,15 @@ freevm(pde_t *pgdir)
 80106c8d:	50                   	push   %eax
 80106c8e:	e8 4d b6 ff ff       	call   801022e0 <kfree>
 80106c93:	83 c4 10             	add    $0x10,%esp
-  uint i;
-
-  if(pgdir == 0)
-    panic("freevm: no pgdir");
-  deallocuvm(pgdir, KERNBASE, 0);
-  for(i = 0; i < NPDENTRIES; i++){
 80106c96:	39 fb                	cmp    %edi,%ebx
 80106c98:	75 dd                	jne    80106c77 <freevm+0x37>
-    if(pgdir[i] & PTE_P){
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
-    }
-  }
-  kfree((char*)pgdir);
 80106c9a:	89 75 08             	mov    %esi,0x8(%ebp)
-}
 80106c9d:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106ca0:	5b                   	pop    %ebx
 80106ca1:	5e                   	pop    %esi
 80106ca2:	5f                   	pop    %edi
 80106ca3:	5d                   	pop    %ebp
-    if(pgdir[i] & PTE_P){
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
-    }
-  }
-  kfree((char*)pgdir);
 80106ca4:	e9 37 b6 ff ff       	jmp    801022e0 <kfree>
-freevm(pde_t *pgdir)
-{
-  uint i;
-
-  if(pgdir == 0)
-    panic("freevm: no pgdir");
 80106ca9:	83 ec 0c             	sub    $0xc,%esp
 80106cac:	68 e5 78 10 80       	push   $0x801078e5
 80106cb1:	e8 ba 96 ff ff       	call   80100370 <panic>
@@ -20733,46 +20031,21 @@ freevm(pde_t *pgdir)
 80106cb9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 80106cc0 <setupkvm>:
-};
-
-// Set up kernel part of a page table.
-pde_t*
-setupkvm(void)
-{
 80106cc0:	55                   	push   %ebp
 80106cc1:	89 e5                	mov    %esp,%ebp
 80106cc3:	56                   	push   %esi
 80106cc4:	53                   	push   %ebx
-  pde_t *pgdir;
-  struct kmap *k;
-
-  if((pgdir = (pde_t*)kalloc()) == 0)
 80106cc5:	e8 c6 b7 ff ff       	call   80102490 <kalloc>
 80106cca:	85 c0                	test   %eax,%eax
 80106ccc:	74 6a                	je     80106d38 <setupkvm+0x78>
-    return 0;
-  memset(pgdir, 0, PGSIZE);
 80106cce:	83 ec 04             	sub    $0x4,%esp
 80106cd1:	89 c6                	mov    %eax,%esi
-  if (P2V(PHYSTOP) > (void*)DEVSPACE)
-    panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
 80106cd3:	bb 20 a4 10 80       	mov    $0x8010a420,%ebx
-  pde_t *pgdir;
-  struct kmap *k;
-
-  if((pgdir = (pde_t*)kalloc()) == 0)
-    return 0;
-  memset(pgdir, 0, PGSIZE);
 80106cd8:	68 00 10 00 00       	push   $0x1000
 80106cdd:	6a 00                	push   $0x0
 80106cdf:	50                   	push   %eax
 80106ce0:	e8 2b d7 ff ff       	call   80104410 <memset>
 80106ce5:	83 c4 10             	add    $0x10,%esp
-  if (P2V(PHYSTOP) > (void*)DEVSPACE)
-    panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
-    if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
 80106ce8:	8b 43 04             	mov    0x4(%ebx),%eax
 80106ceb:	8b 4b 08             	mov    0x8(%ebx),%ecx
 80106cee:	83 ec 08             	sub    $0x8,%esp
@@ -20785,22 +20058,10 @@ setupkvm(void)
 80106d00:	83 c4 10             	add    $0x10,%esp
 80106d03:	85 c0                	test   %eax,%eax
 80106d05:	78 19                	js     80106d20 <setupkvm+0x60>
-  if((pgdir = (pde_t*)kalloc()) == 0)
-    return 0;
-  memset(pgdir, 0, PGSIZE);
-  if (P2V(PHYSTOP) > (void*)DEVSPACE)
-    panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
 80106d07:	83 c3 10             	add    $0x10,%ebx
 80106d0a:	81 fb 60 a4 10 80    	cmp    $0x8010a460,%ebx
 80106d10:	75 d6                	jne    80106ce8 <setupkvm+0x28>
 80106d12:	89 f0                	mov    %esi,%eax
-                (uint)k->phys_start, k->perm) < 0) {
-      freevm(pgdir);
-      return 0;
-    }
-  return pgdir;
-}
 80106d14:	8d 65 f8             	lea    -0x8(%ebp),%esp
 80106d17:	5b                   	pop    %ebx
 80106d18:	5e                   	pop    %esi
@@ -20808,138 +20069,62 @@ setupkvm(void)
 80106d1a:	c3                   	ret    
 80106d1b:	90                   	nop
 80106d1c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
-  if (P2V(PHYSTOP) > (void*)DEVSPACE)
-    panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
-    if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-                (uint)k->phys_start, k->perm) < 0) {
-      freevm(pgdir);
 80106d20:	83 ec 0c             	sub    $0xc,%esp
 80106d23:	56                   	push   %esi
 80106d24:	e8 17 ff ff ff       	call   80106c40 <freevm>
-      return 0;
 80106d29:	83 c4 10             	add    $0x10,%esp
-    }
-  return pgdir;
-}
 80106d2c:	8d 65 f8             	lea    -0x8(%ebp),%esp
-    panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
-    if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-                (uint)k->phys_start, k->perm) < 0) {
-      freevm(pgdir);
-      return 0;
 80106d2f:	31 c0                	xor    %eax,%eax
-    }
-  return pgdir;
-}
 80106d31:	5b                   	pop    %ebx
 80106d32:	5e                   	pop    %esi
 80106d33:	5d                   	pop    %ebp
 80106d34:	c3                   	ret    
 80106d35:	8d 76 00             	lea    0x0(%esi),%esi
-{
-  pde_t *pgdir;
-  struct kmap *k;
-
-  if((pgdir = (pde_t*)kalloc()) == 0)
-    return 0;
 80106d38:	31 c0                	xor    %eax,%eax
 80106d3a:	eb d8                	jmp    80106d14 <setupkvm+0x54>
 80106d3c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 
 80106d40 <kvmalloc>:
-
-// Allocate one page table for the machine for the kernel address
-// space for scheduler processes.
-void
-kvmalloc(void)
-{
 80106d40:	55                   	push   %ebp
 80106d41:	89 e5                	mov    %esp,%ebp
 80106d43:	83 ec 08             	sub    $0x8,%esp
-  kpgdir = setupkvm();
 80106d46:	e8 75 ff ff ff       	call   80106cc0 <setupkvm>
 80106d4b:	a3 a4 54 11 80       	mov    %eax,0x801154a4
 80106d50:	05 00 00 00 80       	add    $0x80000000,%eax
 80106d55:	0f 22 d8             	mov    %eax,%cr3
-  switchkvm();
-}
 80106d58:	c9                   	leave  
 80106d59:	c3                   	ret    
 80106d5a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 80106d60 <clearpteu>:
-
-// Clear PTE_U on a page. Used to create an inaccessible
-// page beneath the user stack.
-void
-clearpteu(pde_t *pgdir, char *uva)
-{
 80106d60:	55                   	push   %ebp
-  pte_t *pte;
-
-  pte = walkpgdir(pgdir, uva, 0);
 80106d61:	31 c9                	xor    %ecx,%ecx
-
-// Clear PTE_U on a page. Used to create an inaccessible
-// page beneath the user stack.
-void
-clearpteu(pde_t *pgdir, char *uva)
-{
 80106d63:	89 e5                	mov    %esp,%ebp
 80106d65:	83 ec 08             	sub    $0x8,%esp
-  pte_t *pte;
-
-  pte = walkpgdir(pgdir, uva, 0);
 80106d68:	8b 55 0c             	mov    0xc(%ebp),%edx
 80106d6b:	8b 45 08             	mov    0x8(%ebp),%eax
 80106d6e:	e8 7d f8 ff ff       	call   801065f0 <walkpgdir>
-  if(pte == 0)
 80106d73:	85 c0                	test   %eax,%eax
 80106d75:	74 05                	je     80106d7c <clearpteu+0x1c>
-    panic("clearpteu");
-  *pte &= ~PTE_U;
 80106d77:	83 20 fb             	andl   $0xfffffffb,(%eax)
-}
 80106d7a:	c9                   	leave  
 80106d7b:	c3                   	ret    
-{
-  pte_t *pte;
-
-  pte = walkpgdir(pgdir, uva, 0);
-  if(pte == 0)
-    panic("clearpteu");
 80106d7c:	83 ec 0c             	sub    $0xc,%esp
 80106d7f:	68 f6 78 10 80       	push   $0x801078f6
 80106d84:	e8 e7 95 ff ff       	call   80100370 <panic>
 80106d89:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 
 80106d90 <copyuvm>:
-
-// Given a parent process's page table, create a copy
-// of it for a child.
-pde_t*
-copyuvm(pde_t *pgdir, uint sz)
-{
 80106d90:	55                   	push   %ebp
 80106d91:	89 e5                	mov    %esp,%ebp
 80106d93:	57                   	push   %edi
 80106d94:	56                   	push   %esi
 80106d95:	53                   	push   %ebx
 80106d96:	83 ec 1c             	sub    $0x1c,%esp
-  pde_t *d;
-  pte_t *pte;
-  uint pa, i, flags;
-  char *mem;
-
-  if((d = setupkvm()) == 0)
 80106d99:	e8 22 ff ff ff       	call   80106cc0 <setupkvm>
 80106d9e:	85 c0                	test   %eax,%eax
 80106da0:	89 45 e0             	mov    %eax,-0x20(%ebp)
 80106da3:	0f 84 b2 00 00 00    	je     80106e5b <copyuvm+0xcb>
-    return 0;
-  for(i = 0; i < sz; i += PGSIZE){
 80106da9:	8b 4d 0c             	mov    0xc(%ebp),%ecx
 80106dac:	85 c9                	test   %ecx,%ecx
 80106dae:	0f 84 9c 00 00 00    	je     80106e50 <copyuvm+0xc0>
@@ -20947,19 +20132,12 @@ copyuvm(pde_t *pgdir, uint sz)
 80106db6:	eb 4a                	jmp    80106e02 <copyuvm+0x72>
 80106db8:	90                   	nop
 80106db9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-      panic("copyuvm: page not present");
-    pa = PTE_ADDR(*pte);
-    flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
 80106dc0:	83 ec 04             	sub    $0x4,%esp
 80106dc3:	81 c7 00 00 00 80    	add    $0x80000000,%edi
 80106dc9:	68 00 10 00 00       	push   $0x1000
 80106dce:	57                   	push   %edi
 80106dcf:	50                   	push   %eax
 80106dd0:	e8 eb d6 ff ff       	call   801044c0 <memmove>
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
 80106dd5:	58                   	pop    %eax
 80106dd6:	5a                   	pop    %edx
 80106dd7:	8d 93 00 00 00 80    	lea    -0x80000000(%ebx),%edx
@@ -20972,59 +20150,31 @@ copyuvm(pde_t *pgdir, uint sz)
 80106df0:	83 c4 10             	add    $0x10,%esp
 80106df3:	85 c0                	test   %eax,%eax
 80106df5:	78 3e                	js     80106e35 <copyuvm+0xa5>
-  uint pa, i, flags;
-  char *mem;
-
-  if((d = setupkvm()) == 0)
-    return 0;
-  for(i = 0; i < sz; i += PGSIZE){
 80106df7:	81 c6 00 10 00 00    	add    $0x1000,%esi
 80106dfd:	39 75 0c             	cmp    %esi,0xc(%ebp)
 80106e00:	76 4e                	jbe    80106e50 <copyuvm+0xc0>
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
 80106e02:	8b 45 08             	mov    0x8(%ebp),%eax
 80106e05:	31 c9                	xor    %ecx,%ecx
 80106e07:	89 f2                	mov    %esi,%edx
 80106e09:	e8 e2 f7 ff ff       	call   801065f0 <walkpgdir>
 80106e0e:	85 c0                	test   %eax,%eax
 80106e10:	74 5a                	je     80106e6c <copyuvm+0xdc>
-      panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
 80106e12:	8b 18                	mov    (%eax),%ebx
 80106e14:	f6 c3 01             	test   $0x1,%bl
 80106e17:	74 46                	je     80106e5f <copyuvm+0xcf>
-      panic("copyuvm: page not present");
-    pa = PTE_ADDR(*pte);
 80106e19:	89 df                	mov    %ebx,%edi
-    flags = PTE_FLAGS(*pte);
 80106e1b:	81 e3 ff 0f 00 00    	and    $0xfff,%ebx
 80106e21:	89 5d e4             	mov    %ebx,-0x1c(%ebp)
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
-    pa = PTE_ADDR(*pte);
 80106e24:	81 e7 00 f0 ff ff    	and    $0xfffff000,%edi
-    flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
 80106e2a:	e8 61 b6 ff ff       	call   80102490 <kalloc>
 80106e2f:	85 c0                	test   %eax,%eax
 80106e31:	89 c3                	mov    %eax,%ebx
 80106e33:	75 8b                	jne    80106dc0 <copyuvm+0x30>
-      goto bad;
-  }
-  return d;
-
-bad:
-  freevm(d);
 80106e35:	83 ec 0c             	sub    $0xc,%esp
 80106e38:	ff 75 e0             	pushl  -0x20(%ebp)
 80106e3b:	e8 00 fe ff ff       	call   80106c40 <freevm>
-  return 0;
 80106e40:	83 c4 10             	add    $0x10,%esp
 80106e43:	31 c0                	xor    %eax,%eax
-}
 80106e45:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106e48:	5b                   	pop    %ebx
 80106e49:	5e                   	pop    %esi
@@ -21032,123 +20182,49 @@ bad:
 80106e4b:	5d                   	pop    %ebp
 80106e4c:	c3                   	ret    
 80106e4d:	8d 76 00             	lea    0x0(%esi),%esi
-  uint pa, i, flags;
-  char *mem;
-
-  if((d = setupkvm()) == 0)
-    return 0;
-  for(i = 0; i < sz; i += PGSIZE){
 80106e50:	8b 45 e0             	mov    -0x20(%ebp),%eax
-  return d;
-
-bad:
-  freevm(d);
-  return 0;
-}
 80106e53:	8d 65 f4             	lea    -0xc(%ebp),%esp
 80106e56:	5b                   	pop    %ebx
 80106e57:	5e                   	pop    %esi
 80106e58:	5f                   	pop    %edi
 80106e59:	5d                   	pop    %ebp
 80106e5a:	c3                   	ret    
-  pte_t *pte;
-  uint pa, i, flags;
-  char *mem;
-
-  if((d = setupkvm()) == 0)
-    return 0;
 80106e5b:	31 c0                	xor    %eax,%eax
 80106e5d:	eb e6                	jmp    80106e45 <copyuvm+0xb5>
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
 80106e5f:	83 ec 0c             	sub    $0xc,%esp
 80106e62:	68 1a 79 10 80       	push   $0x8010791a
 80106e67:	e8 04 95 ff ff       	call   80100370 <panic>
-
-  if((d = setupkvm()) == 0)
-    return 0;
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
 80106e6c:	83 ec 0c             	sub    $0xc,%esp
 80106e6f:	68 00 79 10 80       	push   $0x80107900
 80106e74:	e8 f7 94 ff ff       	call   80100370 <panic>
 80106e79:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 
 80106e80 <uva2ka>:
-
-//PAGEBREAK!
-// Map user virtual address to kernel address.
-char*
-uva2ka(pde_t *pgdir, char *uva)
-{
 80106e80:	55                   	push   %ebp
-  pte_t *pte;
-
-  pte = walkpgdir(pgdir, uva, 0);
 80106e81:	31 c9                	xor    %ecx,%ecx
-
-//PAGEBREAK!
-// Map user virtual address to kernel address.
-char*
-uva2ka(pde_t *pgdir, char *uva)
-{
 80106e83:	89 e5                	mov    %esp,%ebp
 80106e85:	83 ec 08             	sub    $0x8,%esp
-  pte_t *pte;
-
-  pte = walkpgdir(pgdir, uva, 0);
 80106e88:	8b 55 0c             	mov    0xc(%ebp),%edx
 80106e8b:	8b 45 08             	mov    0x8(%ebp),%eax
 80106e8e:	e8 5d f7 ff ff       	call   801065f0 <walkpgdir>
-  if((*pte & PTE_P) == 0)
 80106e93:	8b 00                	mov    (%eax),%eax
-    return 0;
-  if((*pte & PTE_U) == 0)
 80106e95:	89 c2                	mov    %eax,%edx
 80106e97:	83 e2 05             	and    $0x5,%edx
 80106e9a:	83 fa 05             	cmp    $0x5,%edx
 80106e9d:	75 11                	jne    80106eb0 <uva2ka+0x30>
-    return 0;
-  return (char*)P2V(PTE_ADDR(*pte));
 80106e9f:	25 00 f0 ff ff       	and    $0xfffff000,%eax
-}
 80106ea4:	c9                   	leave  
-  pte = walkpgdir(pgdir, uva, 0);
-  if((*pte & PTE_P) == 0)
-    return 0;
-  if((*pte & PTE_U) == 0)
-    return 0;
-  return (char*)P2V(PTE_ADDR(*pte));
 80106ea5:	05 00 00 00 80       	add    $0x80000000,%eax
-}
 80106eaa:	c3                   	ret    
 80106eab:	90                   	nop
 80106eac:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
-
-  pte = walkpgdir(pgdir, uva, 0);
-  if((*pte & PTE_P) == 0)
-    return 0;
-  if((*pte & PTE_U) == 0)
-    return 0;
 80106eb0:	31 c0                	xor    %eax,%eax
-  return (char*)P2V(PTE_ADDR(*pte));
-}
 80106eb2:	c9                   	leave  
 80106eb3:	c3                   	ret    
 80106eb4:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 80106eba:	8d bf 00 00 00 00    	lea    0x0(%edi),%edi
 
 80106ec0 <copyout>:
-// Copy len bytes from p to user address va in page table pgdir.
-// Most useful when pgdir is not the current page table.
-// uva2ka ensures this only works for PTE_U pages.
-int
-copyout(pde_t *pgdir, uint va, void *p, uint len)
-{
 80106ec0:	55                   	push   %ebp
 80106ec1:	89 e5                	mov    %esp,%ebp
 80106ec3:	57                   	push   %edi
@@ -21158,30 +20234,17 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 80106ec9:	8b 5d 14             	mov    0x14(%ebp),%ebx
 80106ecc:	8b 55 0c             	mov    0xc(%ebp),%edx
 80106ecf:	8b 7d 10             	mov    0x10(%ebp),%edi
-  char *buf, *pa0;
-  uint n, va0;
-
-  buf = (char*)p;
-  while(len > 0){
 80106ed2:	85 db                	test   %ebx,%ebx
 80106ed4:	75 40                	jne    80106f16 <copyout+0x56>
 80106ed6:	eb 70                	jmp    80106f48 <copyout+0x88>
 80106ed8:	90                   	nop
 80106ed9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-    va0 = (uint)PGROUNDDOWN(va);
-    pa0 = uva2ka(pgdir, (char*)va0);
-    if(pa0 == 0)
-      return -1;
-    n = PGSIZE - (va - va0);
 80106ee0:	8b 55 e4             	mov    -0x1c(%ebp),%edx
 80106ee3:	89 f1                	mov    %esi,%ecx
 80106ee5:	29 d1                	sub    %edx,%ecx
 80106ee7:	81 c1 00 10 00 00    	add    $0x1000,%ecx
 80106eed:	39 d9                	cmp    %ebx,%ecx
 80106eef:	0f 47 cb             	cmova  %ebx,%ecx
-    if(n > len)
-      n = len;
-    memmove(pa0 + (va - va0), buf, n);
 80106ef2:	29 f2                	sub    %esi,%edx
 80106ef4:	83 ec 04             	sub    $0x4,%esp
 80106ef7:	01 d0                	add    %edx,%eax
@@ -21190,78 +20253,24 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 80106efb:	50                   	push   %eax
 80106efc:	89 4d e4             	mov    %ecx,-0x1c(%ebp)
 80106eff:	e8 bc d5 ff ff       	call   801044c0 <memmove>
-    len -= n;
-    buf += n;
 80106f04:	8b 4d e4             	mov    -0x1c(%ebp),%ecx
-{
-  char *buf, *pa0;
-  uint n, va0;
-
-  buf = (char*)p;
-  while(len > 0){
 80106f07:	83 c4 10             	add    $0x10,%esp
-    if(n > len)
-      n = len;
-    memmove(pa0 + (va - va0), buf, n);
-    len -= n;
-    buf += n;
-    va = va0 + PGSIZE;
 80106f0a:	8d 96 00 10 00 00    	lea    0x1000(%esi),%edx
-    n = PGSIZE - (va - va0);
-    if(n > len)
-      n = len;
-    memmove(pa0 + (va - va0), buf, n);
-    len -= n;
-    buf += n;
 80106f10:	01 cf                	add    %ecx,%edi
-{
-  char *buf, *pa0;
-  uint n, va0;
-
-  buf = (char*)p;
-  while(len > 0){
 80106f12:	29 cb                	sub    %ecx,%ebx
 80106f14:	74 32                	je     80106f48 <copyout+0x88>
-    va0 = (uint)PGROUNDDOWN(va);
 80106f16:	89 d6                	mov    %edx,%esi
-    pa0 = uva2ka(pgdir, (char*)va0);
 80106f18:	83 ec 08             	sub    $0x8,%esp
-  char *buf, *pa0;
-  uint n, va0;
-
-  buf = (char*)p;
-  while(len > 0){
-    va0 = (uint)PGROUNDDOWN(va);
 80106f1b:	89 55 e4             	mov    %edx,-0x1c(%ebp)
 80106f1e:	81 e6 00 f0 ff ff    	and    $0xfffff000,%esi
-    pa0 = uva2ka(pgdir, (char*)va0);
 80106f24:	56                   	push   %esi
 80106f25:	ff 75 08             	pushl  0x8(%ebp)
 80106f28:	e8 53 ff ff ff       	call   80106e80 <uva2ka>
-    if(pa0 == 0)
 80106f2d:	83 c4 10             	add    $0x10,%esp
 80106f30:	85 c0                	test   %eax,%eax
 80106f32:	75 ac                	jne    80106ee0 <copyout+0x20>
-    len -= n;
-    buf += n;
-    va = va0 + PGSIZE;
-  }
-  return 0;
-}
 80106f34:	8d 65 f4             	lea    -0xc(%ebp),%esp
-  buf = (char*)p;
-  while(len > 0){
-    va0 = (uint)PGROUNDDOWN(va);
-    pa0 = uva2ka(pgdir, (char*)va0);
-    if(pa0 == 0)
-      return -1;
 80106f37:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
-    len -= n;
-    buf += n;
-    va = va0 + PGSIZE;
-  }
-  return 0;
-}
 80106f3c:	5b                   	pop    %ebx
 80106f3d:	5e                   	pop    %esi
 80106f3e:	5f                   	pop    %edi
@@ -21269,14 +20278,7 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 80106f40:	c3                   	ret    
 80106f41:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 80106f48:	8d 65 f4             	lea    -0xc(%ebp),%esp
-    memmove(pa0 + (va - va0), buf, n);
-    len -= n;
-    buf += n;
-    va = va0 + PGSIZE;
-  }
-  return 0;
 80106f4b:	31 c0                	xor    %eax,%eax
-}
 80106f4d:	5b                   	pop    %ebx
 80106f4e:	5e                   	pop    %esi
 80106f4f:	5f                   	pop    %edi
