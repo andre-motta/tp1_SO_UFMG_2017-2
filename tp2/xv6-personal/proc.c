@@ -235,7 +235,7 @@ forkcow(void)
   }
 
   // Copy process state from proc.
-  cprintf("Entrou no copyuvmcow\n");
+  //cprintf("Entrou no copyuvmcow\n");
   if((np->pgdir = copyuvmcow(curproc->pgdir, curproc->sz)) == 0){
     cprintf("ERRO NO COPYUVMCOW\n");
     kfree(np->kstack);

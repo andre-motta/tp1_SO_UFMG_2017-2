@@ -37,7 +37,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-
+  //cprintf("walkpgdir in\n");
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
@@ -45,7 +45,9 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
+    //cprintf("memset in\n");
     memset(pgtab, 0, PGSIZE);
+    //cprintf("memset out\n");
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
@@ -347,20 +349,25 @@ bad:
 pde_t*
 copyuvmcow(pde_t *pgdir, uint sz)
 {
-  cprintf("entrou no copyuvmcow\n");
+  //cprintf("entrou no copyuvmcow\n");
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags; 
+  cprintf("sz = %d\n", sz);
 
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
     cprintf("for \n");
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+    {
+      cprintf("walkpgdir error\n");
       panic("copyuvm: pte should exist");
+    }
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
     *pte &= ~PTE_W;
+    *pte &= PTE_COW;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
@@ -439,7 +446,7 @@ pagefault(uint error)
     panic("pagefault");
   }
 
-  if(va >= KERNBASE || (pte = walkpgdir(cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U) )
+  if(va >= KERNBASE || (pte = (cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U) )
   {
     cprintf("Acesso ao endereço virtual restrito no endereço 0x%x, kill processo %s de pid %d\n",
      va, cur->name, cur->pid);
