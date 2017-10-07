@@ -456,10 +456,11 @@ pagefault(uint error)
     cur->killed = 1;
     return;
   }
-
+  
   if(*pte & PTE_COW)
     {
       uint physicalAdress = PTE_ADDR(*pte);
+      cprintf("pa %d do proc %d\n", physicalAdress, cur->pid);
       uint refCount = getRefCount(physicalAdress);
       cprintf("ref count :%x\n", refCount);
       char* mem;
