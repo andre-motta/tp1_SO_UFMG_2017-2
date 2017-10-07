@@ -440,6 +440,7 @@ pagefault(uint error)
 {
   struct proc *cur = myproc();
   uint va = rcr2();
+  char *a = (char *)PGROUNDDOWN(va);
   pte_t *pte;
     if(!(error & 0x02)){cprintf("Nao e erro de escrita.");return;}
   if(cur ==0)
@@ -448,7 +449,7 @@ pagefault(uint error)
     panic("pagefault");
   }
 
-  if(va >= KERNBASE || (pte = walkpgdir(cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U))
+  if(va >= KERNBASE || (pte = walkpgdir(cur->pgdir, (void*)a, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U))
   {
     cprintf("Acesso ao endereço virtual restrito no endereço 0x%x, kill processo %s de pid %d\n",
      va, cur->name, cur->pid);
@@ -475,6 +476,7 @@ pagefault(uint error)
           memmove(mem, (char*)P2V(physicalAdress), PGSIZE);
 
           *pte = V2P(mem) | PTE_P | PTE_U | PTE_W | PTE_FLAGS(*pte);
+          *pte &= ~PTE_COW;
           uint refTest = getRefCount(physicalAdress);
           cprintf("PGfault: ref test de %d para %x\n", physicalAdress, refTest);
           minusRefCount(physicalAdress);
@@ -487,10 +489,11 @@ pagefault(uint error)
       {
         cur->killed = 1;
         panic("Referências incorretas\n");
-
+        return;
       }
       else
       {
+        cprintf("eu n sei o que estou fazendo\n");
         *pte &= ~PTE_COW;
         *pte |= PTE_W;
       }

@@ -70,19 +70,23 @@ kfree(char *v)
 
   // Fill with junk to catch dangling refs.
   
-  if(kmem.pageRefCount[V2P(v)>>PGSHIFT]<=0)
+  if(kmem.pageRefCount[V2P(v)>>PGSHIFT] <=0)
   {
      memset(v, 1, PGSIZE);
      if(kmem.use_lock)
         acquire(&kmem.lock);
       r = (struct run*)v;
       r->next = kmem.freelist;
+      kmem.pageRefCount[V2P(v)>>PGSHIFT] = 0;
       kmem.freelist = r;
       if(kmem.use_lock)
         release(&kmem.lock);
   }
   else
-    (kmem.pageRefCount[V2P(v)>>PGSHIFT])--;
+  {
+    kmem.pageRefCount[V2P(v)>>PGSHIFT]--;
+  }
+
 
 }
 
@@ -98,6 +102,7 @@ kalloc(void)
     acquire(&kmem.lock);
   r = kmem.freelist;
   if(r){
+    cprintf("aehhoooo vai ter copa em %d\n",V2P((char *)r)>>PGSHIFT );
     kmem.pageRefCount[V2P((char*)r)>>PGSHIFT] = 1; 
     kmem.freelist = r->next;
     }
@@ -146,3 +151,4 @@ getRefCount(uint value)
      
   return count;
 }
+

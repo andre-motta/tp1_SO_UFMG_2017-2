@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
   get_date(&r);
   print_date(&r);
   printf(stdout, "[Caso 4] Testando se o endereço de uma constante é =\n");
-  call_ok = caso4mesmoaddr();
+  call_ok = caso4mesmoaddr(); 
   if (call_ok == FALSE) {
     printf(stdout, "[Caso 4 - ERROR] Falhou!\n");
     exit();

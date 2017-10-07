@@ -112,7 +112,8 @@ sys_virt2real(char *va)
   pte_t *pgtab;
   pde = &(curproc->pgdir)[PDX(va)];
   pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  return (int)pgtab[PTX(va)];
+  pgtab = &pgtab[PTX(va)];
+  return (int)(P2V(PTE_ADDR(pgtab) + PTE_FLAGS(va)));
 
 }
 
