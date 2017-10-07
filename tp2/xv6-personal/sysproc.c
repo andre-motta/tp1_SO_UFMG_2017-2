@@ -13,6 +13,7 @@ sys_fork(void)
   return fork();
 }
 
+
 int
 sys_exit(void)
 {
@@ -127,4 +128,10 @@ sys_num_pages(void)
   else{
     return (temp+1);
   }
+}
+
+int
+sys_forkcow(void)
+{
+  return forkcow();
 }

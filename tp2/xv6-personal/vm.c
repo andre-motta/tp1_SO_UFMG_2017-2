@@ -354,22 +354,24 @@ copyuvmcow(pde_t *pgdir, uint sz)
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
+    //cprintf("for \n");
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
-    *pte &= ~PTE_W; 
+    *pte &= ~PTE_W;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
     addRefCount(pa);
   }
+  //cprintf("chamou flush da TLB\n");
   lcr3(V2P(pgdir));
   return d;
-//         setar bit extra como flag de cow(flag PTE_COW)
-//         implementar trap de PAGEFAULT
+
 bad:
+  //cprintf("deu ruim\n");
   freevm(d);
   lcr3(V2P(pgdir));
   return 0;
@@ -423,3 +425,65 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+void 
+pagefault(uint error)
+{
+  struct proc *cur = myproc();
+  uint va = rcr2();
+  pte_t *pte;
+
+  if(cur ==0)
+  {
+    cprintf( "Page fault occured but it was not the user process\n");
+    panic("pagefault");
+  }
+
+  if(va >= KERNBASE || (pte = walkpgdir(cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U) )
+  {
+    cprintf("Acesso ao endereço virtual restrito no endereço 0x%x, kill processo %s de pid %d\n",
+     va, cur->name, cur->pid);
+    cur->killed = 1;
+    return;
+  }
+
+  if(*pte &PTE_W){
+    cprintf("error code :%x", error);
+    panic("Page fault em pagina marcada com PTE_W");
+  }
+
+  uint physicalAdress = PTE_ADDR(*pte);
+  uint refCount = getRefCount(physicalAdress);
+  cprintf("ref count :%x\n", refCount);
+  char* mem;
+
+  if(refCount > 1)
+  {
+
+      if((mem = kalloc()) == 0)
+      {
+        cprintf("Page fault sem memória, terminando o processo");
+        cur->killed=1;
+        return;
+      }
+      memmove(mem, (char*)P2V(physicalAdress), PGSIZE);
+
+      *pte = V2P(mem) | PTE_P | PTE_U | PTE_W;
+      uint refTest = getRefCount(physicalAdress);
+      cprintf("ref test :%x\n", refTest);
+      minusRefCount(physicalAdress);
+      refTest = getRefCount(physicalAdress);
+      cprintf("ref test :%x\n", refTest);
+
+  }
+
+  else if(refCount == 1)
+  {
+    *pte |= PTE_W;
+  }
+  else
+  {
+    panic("Referências incorretas\n");
+  }
+
+  lcr3(V2P(cur->pgdir));
+}
