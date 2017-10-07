@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int date(void*);
-char* virt2real(void*);
+char* virt2real(char*);
 int num_pages(void);
 int forkcow(void);
 

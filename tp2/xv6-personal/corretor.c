@@ -101,8 +101,7 @@ int caso4mesmoaddr(void) {
   char answer[20];
   int pid = forkcow();
   if (pid == 0) { // child manda addr de GLOBAL1_RO
-    int addr = (int)virt2real((char*)&GLOBAL1_RO);
-    printf(stdout, "Addr parent = %d\n", addr);
+    int addr = (int)virt2real((char*)&GLOBAL1_RO); 
     if (addr < 0) addr = -addr; // atoi falha quando <0, nao sei pq
     printf(stdout, "[--Caso 4.1] Child write %d\n", addr);
     close(fd[0]);
@@ -112,7 +111,6 @@ int caso4mesmoaddr(void) {
     exit();
   } else { // parent espera filho acabar e lê o fd
     int addr = (int)virt2real((char*)&GLOBAL1_RO);
-    printf(stdout, "Addr parent = %d\n", addr);
     if (addr < 0) addr = -addr; // atoi falha quando <0, nao sei pq
     close(fd[1]);
     wait();

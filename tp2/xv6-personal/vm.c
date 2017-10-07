@@ -349,16 +349,13 @@ bad:
 pde_t*
 copyuvmcow(pde_t *pgdir, uint sz)
 {
-  //cprintf("entrou no copyuvmcow\n");
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags; 
-  cprintf("sz = %d\n", sz);
-
+  
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
-    cprintf("for \n");
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
     {
       cprintf("walkpgdir error\n");
@@ -371,17 +368,13 @@ copyuvmcow(pde_t *pgdir, uint sz)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
-      goto bad;
-    cprintf("Copyuvmcow: antes %d para %d\n", pa, getRefCount(pa));
+      goto bad; 
     addRefCount(pa);
-    cprintf("Copyuvmcow: depois %d para %d\n", pa, getRefCount(pa));
   }
-  //cprintf("chamou flush da TLB\n");
   lcr3(V2P(pgdir));
   return d;
 
 bad:
-  //cprintf("deu ruim\n");
   freevm(d);
   lcr3(V2P(pgdir));
   return 0;
@@ -442,7 +435,12 @@ pagefault(uint error)
   uint va = rcr2();
   char *a = (char *)PGROUNDDOWN(va);
   pte_t *pte;
-    if(!(error & 0x02)){cprintf("Nao e erro de escrita.");return;}
+  if(!(error & 0x02))
+  {
+    cprintf("Nao e erro de escrita.");
+    return;
+  }
+ 
   if(cur ==0)
   {
     cprintf( "Page fault occured but it was not the user process\n");
@@ -456,13 +454,16 @@ pagefault(uint error)
     cur->killed = 1;
     return;
   }
-  
+
+  if(*pte & PTE_W)
+  {
+    panic("Pagina ja tem permissao de escrita");
+  }
+ 
   if(*pte & PTE_COW)
     {
       uint physicalAdress = PTE_ADDR(*pte);
-      cprintf("pa %d do proc %d\n", physicalAdress, cur->pid);
-      uint refCount = getRefCount(physicalAdress);
-      cprintf("ref count :%x\n", refCount);
+      uint refCount = getRefCount(physicalAdress);    
       char* mem;
 
       if(refCount > 1)
@@ -476,16 +477,10 @@ pagefault(uint error)
           }
           memmove(mem, (char*)P2V(physicalAdress), PGSIZE);
 
-          *pte = V2P(mem) | PTE_P | PTE_U | PTE_W | PTE_FLAGS(*pte);
+          *pte = V2P(mem) | PTE_P | PTE_U | PTE_W /*| PTE_FLAGS(*pte)*/;
           *pte &= ~PTE_COW;
-          uint refTest = getRefCount(physicalAdress);
-          cprintf("PGfault: ref test de %d para %x\n", physicalAdress, refTest);
           minusRefCount(physicalAdress);
-          refTest = getRefCount(physicalAdress);
-          cprintf("PGfault: ref test de %d para %x\n", physicalAdress, refTest);
-
       }
-
       else if(refCount < 0)
       {
         cur->killed = 1;
@@ -494,7 +489,6 @@ pagefault(uint error)
       }
       else
       {
-        cprintf("eu n sei o que estou fazendo\n");
         *pte &= ~PTE_COW;
         *pte |= PTE_W;
       }
@@ -503,6 +497,7 @@ pagefault(uint error)
   }
   else
   {
-    cur->killed = 1; return;
+    cur->killed = 1;
+    return;
   }
 }

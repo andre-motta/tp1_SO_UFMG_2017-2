@@ -105,15 +105,17 @@ sys_date(void)
 }
 
 int
-sys_virt2real(char *va)
+sys_virt2real(void)
 {
+  char *ptr;
+  argptr(0, &ptr, sizeof(char*));
   struct proc *curproc = myproc();
   pde_t *pde;
   pte_t *pgtab;
-  pde = &(curproc->pgdir)[PDX(va)];
+  pde = &(curproc->pgdir)[PDX((const void *)ptr)];
   pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  //pgtab = &pgtab[PTX(va)];
-  return (int)(P2V(PTE_ADDR(pgtab) + PTE_FLAGS(va)));
+  pgtab = &pgtab[PTX((const void *)ptr)];
+  return (int)(P2V(PTE_ADDR(*pgtab) + PTE_FLAGS(*ptr)));
 
 }
 

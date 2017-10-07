@@ -222,9 +222,6 @@ fork(void)
 }
 
 
-// Create a new process copying p as the parent.
-// Sets up stack to return as if from system call.
-// Caller must set state of returned proc to RUNNABLE.
 int
 forkcow(void)
 {
