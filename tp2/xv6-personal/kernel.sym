@@ -1,7 +1,7 @@
 80100000 .text
-801074c0 .rodata
-801080f8 .stab
-801080f9 .stabstr
+801074a0 .rodata
+801080d0 .stab
+801080d1 .stabstr
 80109000 .data
 8010b520 .bss
 00000000 .debug_line
@@ -18,7 +18,7 @@
 8010b558 panicked
 801003f0 consputc
 80100580 printint
-80107530 digits.1612
+80107510 digits.1612
 00000000 exec.c
 00000000 file.c
 00000000 fs.c
@@ -36,9 +36,9 @@
 00000000 kalloc.c
 00000000 kbd.c
 8010b5b4 shift.1453
-80107880 shiftcode
-80107780 togglecode
-80107760 charcode.1454
+80107860 shiftcode
+80107760 togglecode
+80107740 charcode.1454
 80109200 normalmap
 80109100 shiftmap
 80109000 ctlmap
@@ -57,12 +57,12 @@
 801036d0 allocproc
 8010b000 first.1664
 8010b5b8 initproc
-80107bc4 states.1690
+80107ba4 states.1690
 00000000 sleeplock.c
 00000000 spinlock.c
 00000000 string.c
 00000000 syscall.c
-80107c40 syscalls
+80107c20 syscalls
 00000000 sysfile.c
 80104b00 create
 80104ca0 argfd.constprop.0
@@ -185,7 +185,7 @@
 80100d50 fileinit
 80104430 initlock
 80106297 vector128
-801072a0 copyout
+80107280 copyout
 801060f0 vector81
 80103fc0 sleep
 80102850 microdelay
@@ -246,7 +246,7 @@
 80106747 vector228
 80105f91 vector42
 80106219 vector114
-80107260 uva2ka
+80107240 uva2ka
 801064cb vector175
 8010634b vector143
 80100d70 filealloc
@@ -497,7 +497,7 @@
 8010615c vector93
 80102bd0 initlog
 80106567 vector188
-80107340 pagefault
+80107320 pagefault
 80105fc7 vector48
 801020f0 iderw
 801066db vector219
