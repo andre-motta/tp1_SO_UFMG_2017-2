@@ -221,10 +221,13 @@ fork(void)
   return pid;
 }
 
+
+// Create a new process copying p as the parent.
+// Sets up stack to return as if from system call.
+// Caller must set state of returned proc to RUNNABLE.
 int
 forkcow(void)
 {
-  cprintf("Entrou no forkcow\n");
   int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
@@ -235,9 +238,7 @@ forkcow(void)
   }
 
   // Copy process state from proc.
-  //cprintf("Entrou no copyuvmcow\n");
   if((np->pgdir = copyuvmcow(curproc->pgdir, curproc->sz)) == 0){
-    cprintf("ERRO NO COPYUVMCOW\n");
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -246,10 +247,8 @@ forkcow(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
-  cprintf("Copiou as coisas pro processo novo\n");
 
   // Clear %eax so that fork returns 0 in the child.
-  cprintf("Limpou o eax\n");
   np->tf->eax = 0;
 
   for(i = 0; i < NOFILE; i++)
@@ -266,10 +265,9 @@ forkcow(void)
   np->state = RUNNABLE;
 
   release(&ptable.lock);
-  cprintf("pid retornado : %d\n", pid);
+
   return pid;
 }
-
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
