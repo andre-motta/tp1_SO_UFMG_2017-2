@@ -11,41 +11,16 @@ Disassembly of section .text:
 8010000b:	e4                   	.byte 0xe4
 
 8010000c <entry>:
-
-# Entering xv6 on boot processor, with paging off.
-.globl entry
-entry:
-  # Turn on page size extension for 4Mbyte pages
-  movl    %cr4, %eax
 8010000c:	0f 20 e0             	mov    %cr4,%eax
-  orl     $(CR4_PSE), %eax
 8010000f:	83 c8 10             	or     $0x10,%eax
-  movl    %eax, %cr4
 80100012:	0f 22 e0             	mov    %eax,%cr4
-  # Set page directory
-  movl    $(V2P_WO(entrypgdir)), %eax
 80100015:	b8 00 a0 10 00       	mov    $0x10a000,%eax
-  movl    %eax, %cr3
 8010001a:	0f 22 d8             	mov    %eax,%cr3
-  # Turn on paging.
-  movl    %cr0, %eax
 8010001d:	0f 20 c0             	mov    %cr0,%eax
-  orl     $(CR0_PG|CR0_WP), %eax
 80100020:	0d 00 00 01 80       	or     $0x80010000,%eax
-  movl    %eax, %cr0
 80100025:	0f 22 c0             	mov    %eax,%cr0
-
-  # Set up the stack pointer.
-  movl $(stack + KSTACKSIZE), %esp
 80100028:	bc c0 c5 10 80       	mov    $0x8010c5c0,%esp
-
-  # Jump to main(), and switch to executing at
-  # high addresses. The indirect call is needed because
-  # the assembler produces a PC-relative instruction
-  # for a direct jump.
-  mov $main, %eax
 8010002d:	b8 80 2f 10 80       	mov    $0x80102f80,%eax
-  jmp *%eax
 80100032:	ff e0                	jmp    *%eax
 80100034:	66 90                	xchg   %ax,%ax
 80100036:	66 90                	xchg   %ax,%ax
@@ -644,7 +619,7 @@ cli(void)
 8010039d:	ff 75 08             	pushl  0x8(%ebp)
 801003a0:	e8 bb 02 00 00       	call   80100660 <cprintf>
   cprintf("\n");
-801003a5:	c7 04 24 3a 7f 10 80 	movl   $0x80107f3a,(%esp)
+801003a5:	c7 04 24 2d 7f 10 80 	movl   $0x80107f2d,(%esp)
 801003ac:	e8 af 02 00 00       	call   80100660 <cprintf>
   getcallerpcs(&s, pcs);
 801003b1:	5a                   	pop    %edx
@@ -12099,7 +12074,7 @@ procdump(void)
     }
     cprintf("\n");
 80104268:	83 ec 0c             	sub    $0xc,%esp
-8010426b:	68 3a 7f 10 80       	push   $0x80107f3a
+8010426b:	68 2d 7f 10 80       	push   $0x80107f2d
 80104270:	e8 eb c3 ff ff       	call   80100660 <cprintf>
 80104275:	83 c4 10             	add    $0x10,%esp
 80104278:	83 c3 7c             	add    $0x7c,%ebx
@@ -13440,42 +13415,18 @@ strlen(const char *s)
 801048ea:	c3                   	ret    
 
 801048eb <swtch>:
-# Save current register context in old
-# and then load register context from new.
-
-.globl swtch
-swtch:
-  movl 4(%esp), %eax
 801048eb:	8b 44 24 04          	mov    0x4(%esp),%eax
-  movl 8(%esp), %edx
 801048ef:	8b 54 24 08          	mov    0x8(%esp),%edx
-
-  # Save old callee-save registers
-  pushl %ebp
 801048f3:	55                   	push   %ebp
-  pushl %ebx
 801048f4:	53                   	push   %ebx
-  pushl %esi
 801048f5:	56                   	push   %esi
-  pushl %edi
 801048f6:	57                   	push   %edi
-
-  # Switch stacks
-  movl %esp, (%eax)
 801048f7:	89 20                	mov    %esp,(%eax)
-  movl %edx, %esp
 801048f9:	89 d4                	mov    %edx,%esp
-
-  # Load new callee-save registers
-  popl %edi
 801048fb:	5f                   	pop    %edi
-  popl %esi
 801048fc:	5e                   	pop    %esi
-  popl %ebx
 801048fd:	5b                   	pop    %ebx
-  popl %ebp
 801048fe:	5d                   	pop    %ebp
-  ret
 801048ff:	c3                   	ret    
 
 80104900 <fetchint>:
@@ -16537,7 +16488,7 @@ sys_num_pages(void)
 80105913:	83 ec 08             	sub    $0x8,%esp
   struct proc *curproc = myproc();
 80105916:	e8 85 df ff ff       	call   801038a0 <myproc>
-  int temp = curproc->sz>>PGSHIFT;
+  int temp = curproc->sz/PGSIZE;
 8010591b:	8b 10                	mov    (%eax),%edx
     return temp;
   }
@@ -16551,7 +16502,7 @@ int
 sys_num_pages(void)
 {
   struct proc *curproc = myproc();
-  int temp = curproc->sz>>PGSHIFT;
+  int temp = curproc->sz/PGSIZE;
 8010591e:	89 d0                	mov    %edx,%eax
   int temp2 = curproc->sz % PGSIZE;
   if(temp2 == 0){
@@ -16561,7 +16512,7 @@ int
 sys_num_pages(void)
 {
   struct proc *curproc = myproc();
-  int temp = curproc->sz>>PGSHIFT;
+  int temp = curproc->sz/PGSIZE;
 80105926:	c1 e8 0c             	shr    $0xc,%eax
   int temp2 = curproc->sz % PGSIZE;
   if(temp2 == 0){
@@ -16583,6 +16534,7 @@ sys_forkcow(void)
 80105930:	55                   	push   %ebp
 80105931:	89 e5                	mov    %esp,%ebp
   return forkcow();
+}
 80105933:	5d                   	pop    %ebp
 }
 
@@ -16593,56 +16545,25 @@ sys_forkcow(void)
 80105934:	e9 27 e2 ff ff       	jmp    80103b60 <forkcow>
 
 80105939 <alltraps>:
-
-  # vectors.S sends all traps here.
-.globl alltraps
-alltraps:
-  # Build trap frame.
-  pushl %ds
 80105939:	1e                   	push   %ds
-  pushl %es
 8010593a:	06                   	push   %es
-  pushl %fs
 8010593b:	0f a0                	push   %fs
-  pushl %gs
 8010593d:	0f a8                	push   %gs
-  pushal
 8010593f:	60                   	pusha  
-  
-  # Set up data segments.
-  movw $(SEG_KDATA<<3), %ax
 80105940:	66 b8 10 00          	mov    $0x10,%ax
-  movw %ax, %ds
 80105944:	8e d8                	mov    %eax,%ds
-  movw %ax, %es
 80105946:	8e c0                	mov    %eax,%es
-
-  # Call trap(tf), where tf=%esp
-  pushl %esp
 80105948:	54                   	push   %esp
-  call trap
 80105949:	e8 e2 00 00 00       	call   80105a30 <trap>
-  addl $4, %esp
 8010594e:	83 c4 04             	add    $0x4,%esp
 
 80105951 <trapret>:
-
-  # Return falls through to trapret...
-.globl trapret
-trapret:
-  popal
 80105951:	61                   	popa   
-  popl %gs
 80105952:	0f a9                	pop    %gs
-  popl %fs
 80105954:	0f a1                	pop    %fs
-  popl %es
 80105956:	07                   	pop    %es
-  popl %ds
 80105957:	1f                   	pop    %ds
-  addl $0x8, %esp  # trapno and errcode
 80105958:	83 c4 08             	add    $0x8,%esp
-  iret
 8010595b:	cf                   	iret   
 8010595c:	66 90                	xchg   %ax,%ax
 8010595e:	66 90                	xchg   %ax,%ax
@@ -20846,7 +20767,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
 80106d97:	83 ec 0c             	sub    $0xc,%esp
-80106d9a:	68 9c 7f 10 80       	push   $0x80107f9c
+80106d9a:	68 90 7f 10 80       	push   $0x80107f90
 80106d9f:	e8 cc 95 ff ff       	call   80100370 <panic>
 80106da4:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 80106daa:	8d bf 00 00 00 00    	lea    0x0(%edi),%edi
@@ -21532,190 +21453,193 @@ copyuvmcow(pde_t *pgdir, uint sz)
 80107123:	57                   	push   %edi
 80107124:	56                   	push   %esi
 80107125:	53                   	push   %ebx
-80107126:	83 ec 18             	sub    $0x18,%esp
-80107129:	8b 7d 08             	mov    0x8(%ebp),%edi
-  cprintf("entrou no copyuvmcow\n");
-8010712c:	68 20 7f 10 80       	push   $0x80107f20
-80107131:	e8 2a 95 ff ff       	call   80100660 <cprintf>
+80107126:	83 ec 14             	sub    $0x14,%esp
+80107129:	8b 7d 0c             	mov    0xc(%ebp),%edi
+  //cprintf("entrou no copyuvmcow\n");
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags; 
+  cprintf("sz = %d\n", sz);
+8010712c:	57                   	push   %edi
+8010712d:	68 20 7f 10 80       	push   $0x80107f20
+80107132:	e8 29 95 ff ff       	call   80100660 <cprintf>
 
   if((d = setupkvm()) == 0)
-80107136:	e8 25 fe ff ff       	call   80106f60 <setupkvm>
-8010713b:	83 c4 10             	add    $0x10,%esp
-8010713e:	85 c0                	test   %eax,%eax
-80107140:	0f 84 ad 00 00 00    	je     801071f3 <copyuvmcow+0xd3>
-80107146:	89 c6                	mov    %eax,%esi
+80107137:	e8 24 fe ff ff       	call   80106f60 <setupkvm>
+8010713c:	83 c4 10             	add    $0x10,%esp
+8010713f:	85 c0                	test   %eax,%eax
+80107141:	0f 84 ae 00 00 00    	je     801071f5 <copyuvmcow+0xd5>
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
-80107148:	8b 45 0c             	mov    0xc(%ebp),%eax
-8010714b:	31 db                	xor    %ebx,%ebx
-8010714d:	85 c0                	test   %eax,%eax
-8010714f:	75 27                	jne    80107178 <copyuvmcow+0x58>
-80107151:	e9 8a 00 00 00       	jmp    801071e0 <copyuvmcow+0xc0>
-80107156:	8d 76 00             	lea    0x0(%esi),%esi
-80107159:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+80107147:	31 db                	xor    %ebx,%ebx
+80107149:	85 ff                	test   %edi,%edi
+8010714b:	89 c6                	mov    %eax,%esi
+8010714d:	75 20                	jne    8010716f <copyuvmcow+0x4f>
+8010714f:	e9 8c 00 00 00       	jmp    801071e0 <copyuvmcow+0xc0>
+80107154:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
     *pte &= PTE_COW;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
     addRefCount(pa);
-80107160:	83 ec 0c             	sub    $0xc,%esp
-  pte_t *pte;
+80107158:	83 ec 0c             	sub    $0xc,%esp
   uint pa, i, flags; 
+  cprintf("sz = %d\n", sz);
 
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
-80107163:	81 c3 00 10 00 00    	add    $0x1000,%ebx
+8010715b:	81 c3 00 10 00 00    	add    $0x1000,%ebx
     *pte &= PTE_COW;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
     addRefCount(pa);
-80107169:	6a 00                	push   $0x0
-8010716b:	e8 90 b3 ff ff       	call   80102500 <addRefCount>
-  pte_t *pte;
+80107161:	6a 00                	push   $0x0
+80107163:	e8 98 b3 ff ff       	call   80102500 <addRefCount>
   uint pa, i, flags; 
+  cprintf("sz = %d\n", sz);
 
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
-80107170:	83 c4 10             	add    $0x10,%esp
-80107173:	39 5d 0c             	cmp    %ebx,0xc(%ebp)
-80107176:	76 68                	jbe    801071e0 <copyuvmcow+0xc0>
+80107168:	83 c4 10             	add    $0x10,%esp
+8010716b:	39 df                	cmp    %ebx,%edi
+8010716d:	76 71                	jbe    801071e0 <copyuvmcow+0xc0>
     cprintf("for \n");
-80107178:	83 ec 0c             	sub    $0xc,%esp
-8010717b:	68 36 7f 10 80       	push   $0x80107f36
-80107180:	e8 db 94 ff ff       	call   80100660 <cprintf>
+8010716f:	83 ec 0c             	sub    $0xc,%esp
+80107172:	68 29 7f 10 80       	push   $0x80107f29
+80107177:	e8 e4 94 ff ff       	call   80100660 <cprintf>
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-80107185:	31 c9                	xor    %ecx,%ecx
-80107187:	89 da                	mov    %ebx,%edx
-80107189:	89 f8                	mov    %edi,%eax
-8010718b:	e8 00 f7 ff ff       	call   80106890 <walkpgdir>
-80107190:	83 c4 10             	add    $0x10,%esp
-80107193:	85 c0                	test   %eax,%eax
-80107195:	74 6d                	je     80107204 <copyuvmcow+0xe4>
+8010717c:	8b 45 08             	mov    0x8(%ebp),%eax
+8010717f:	31 c9                	xor    %ecx,%ecx
+80107181:	89 da                	mov    %ebx,%edx
+80107183:	e8 08 f7 ff ff       	call   80106890 <walkpgdir>
+80107188:	83 c4 10             	add    $0x10,%esp
+8010718b:	85 c0                	test   %eax,%eax
+8010718d:	74 77                	je     80107206 <copyuvmcow+0xe6>
     {
       cprintf("walkpgdir error\n");
       panic("copyuvm: pte should exist");
     }
     if(!(*pte & PTE_P))
-80107197:	8b 10                	mov    (%eax),%edx
-80107199:	f6 c2 01             	test   $0x1,%dl
-8010719c:	74 59                	je     801071f7 <copyuvmcow+0xd7>
+8010718f:	8b 10                	mov    (%eax),%edx
+80107191:	f6 c2 01             	test   $0x1,%dl
+80107194:	74 63                	je     801071f9 <copyuvmcow+0xd9>
       panic("copyuvm: page not present");
     *pte &= ~PTE_W;
     *pte &= PTE_COW;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
-8010719e:	83 ec 08             	sub    $0x8,%esp
+80107196:	83 ec 08             	sub    $0x8,%esp
       panic("copyuvm: pte should exist");
     }
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
     *pte &= ~PTE_W;
     *pte &= PTE_COW;
-801071a1:	81 e2 00 04 00 00    	and    $0x400,%edx
+80107199:	81 e2 00 04 00 00    	and    $0x400,%edx
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
-801071a7:	b9 00 10 00 00       	mov    $0x1000,%ecx
+8010719f:	b9 00 10 00 00       	mov    $0x1000,%ecx
       panic("copyuvm: pte should exist");
     }
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
     *pte &= ~PTE_W;
     *pte &= PTE_COW;
-801071ac:	89 10                	mov    %edx,(%eax)
+801071a4:	89 10                	mov    %edx,(%eax)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
-801071ae:	52                   	push   %edx
-801071af:	89 f0                	mov    %esi,%eax
-801071b1:	6a 00                	push   $0x0
-801071b3:	89 da                	mov    %ebx,%edx
-801071b5:	e8 56 f7 ff ff       	call   80106910 <mappages>
-801071ba:	83 c4 10             	add    $0x10,%esp
-801071bd:	85 c0                	test   %eax,%eax
-801071bf:	79 9f                	jns    80107160 <copyuvmcow+0x40>
+801071a6:	52                   	push   %edx
+801071a7:	89 f0                	mov    %esi,%eax
+801071a9:	6a 00                	push   $0x0
+801071ab:	89 da                	mov    %ebx,%edx
+801071ad:	e8 5e f7 ff ff       	call   80106910 <mappages>
+801071b2:	83 c4 10             	add    $0x10,%esp
+801071b5:	85 c0                	test   %eax,%eax
+801071b7:	79 9f                	jns    80107158 <copyuvmcow+0x38>
   lcr3(V2P(pgdir));
   return d;
 
 bad:
   //cprintf("deu ruim\n");
   freevm(d);
-801071c1:	83 ec 0c             	sub    $0xc,%esp
-801071c4:	81 c7 00 00 00 80    	add    $0x80000000,%edi
-801071ca:	56                   	push   %esi
-801071cb:	e8 10 fd ff ff       	call   80106ee0 <freevm>
-801071d0:	0f 22 df             	mov    %edi,%cr3
+801071b9:	83 ec 0c             	sub    $0xc,%esp
+801071bc:	56                   	push   %esi
+801071bd:	e8 1e fd ff ff       	call   80106ee0 <freevm>
+801071c2:	8b 45 08             	mov    0x8(%ebp),%eax
+801071c5:	05 00 00 00 80       	add    $0x80000000,%eax
+801071ca:	0f 22 d8             	mov    %eax,%cr3
   lcr3(V2P(pgdir));
   return 0;
-801071d3:	31 c0                	xor    %eax,%eax
-801071d5:	83 c4 10             	add    $0x10,%esp
+801071cd:	31 c0                	xor    %eax,%eax
+801071cf:	83 c4 10             	add    $0x10,%esp
 }
-801071d8:	8d 65 f4             	lea    -0xc(%ebp),%esp
-801071db:	5b                   	pop    %ebx
-801071dc:	5e                   	pop    %esi
-801071dd:	5f                   	pop    %edi
-801071de:	5d                   	pop    %ebp
-801071df:	c3                   	ret    
-801071e0:	81 c7 00 00 00 80    	add    $0x80000000,%edi
-801071e6:	0f 22 df             	mov    %edi,%cr3
-801071e9:	8d 65 f4             	lea    -0xc(%ebp),%esp
+801071d2:	8d 65 f4             	lea    -0xc(%ebp),%esp
+801071d5:	5b                   	pop    %ebx
+801071d6:	5e                   	pop    %esi
+801071d7:	5f                   	pop    %edi
+801071d8:	5d                   	pop    %ebp
+801071d9:	c3                   	ret    
+801071da:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+801071e0:	8b 45 08             	mov    0x8(%ebp),%eax
+801071e3:	05 00 00 00 80       	add    $0x80000000,%eax
+801071e8:	0f 22 d8             	mov    %eax,%cr3
+801071eb:	8d 65 f4             	lea    -0xc(%ebp),%esp
       goto bad;
     addRefCount(pa);
   }
   //cprintf("chamou flush da TLB\n");
   lcr3(V2P(pgdir));
   return d;
-801071ec:	89 f0                	mov    %esi,%eax
+801071ee:	89 f0                	mov    %esi,%eax
 bad:
   //cprintf("deu ruim\n");
   freevm(d);
   lcr3(V2P(pgdir));
   return 0;
 }
-801071ee:	5b                   	pop    %ebx
-801071ef:	5e                   	pop    %esi
-801071f0:	5f                   	pop    %edi
-801071f1:	5d                   	pop    %ebp
-801071f2:	c3                   	ret    
-  pde_t *d;
+801071f0:	5b                   	pop    %ebx
+801071f1:	5e                   	pop    %esi
+801071f2:	5f                   	pop    %edi
+801071f3:	5d                   	pop    %ebp
+801071f4:	c3                   	ret    
   pte_t *pte;
   uint pa, i, flags; 
+  cprintf("sz = %d\n", sz);
 
   if((d = setupkvm()) == 0)
     return 0;
-801071f3:	31 c0                	xor    %eax,%eax
-801071f5:	eb e1                	jmp    801071d8 <copyuvmcow+0xb8>
+801071f5:	31 c0                	xor    %eax,%eax
+801071f7:	eb d9                	jmp    801071d2 <copyuvmcow+0xb2>
     {
       cprintf("walkpgdir error\n");
       panic("copyuvm: pte should exist");
     }
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
-801071f7:	83 ec 0c             	sub    $0xc,%esp
-801071fa:	68 06 7f 10 80       	push   $0x80107f06
-801071ff:	e8 6c 91 ff ff       	call   80100370 <panic>
+801071f9:	83 ec 0c             	sub    $0xc,%esp
+801071fc:	68 06 7f 10 80       	push   $0x80107f06
+80107201:	e8 6a 91 ff ff       	call   80100370 <panic>
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
     cprintf("for \n");
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
     {
       cprintf("walkpgdir error\n");
-80107204:	83 ec 0c             	sub    $0xc,%esp
-80107207:	68 3c 7f 10 80       	push   $0x80107f3c
-8010720c:	e8 4f 94 ff ff       	call   80100660 <cprintf>
+80107206:	83 ec 0c             	sub    $0xc,%esp
+80107209:	68 2f 7f 10 80       	push   $0x80107f2f
+8010720e:	e8 4d 94 ff ff       	call   80100660 <cprintf>
       panic("copyuvm: pte should exist");
-80107211:	c7 04 24 ec 7e 10 80 	movl   $0x80107eec,(%esp)
-80107218:	e8 53 91 ff ff       	call   80100370 <panic>
-8010721d:	8d 76 00             	lea    0x0(%esi),%esi
+80107213:	c7 04 24 ec 7e 10 80 	movl   $0x80107eec,(%esp)
+8010721a:	e8 51 91 ff ff       	call   80100370 <panic>
+8010721f:	90                   	nop
 
 80107220 <uva2ka>:
 
@@ -21986,7 +21910,7 @@ rcr2(void)
 80107340:	ff 73 10             	pushl  0x10(%ebx)
 80107343:	50                   	push   %eax
 80107344:	56                   	push   %esi
-80107345:	68 f4 7f 10 80       	push   $0x80107ff4
+80107345:	68 e8 7f 10 80       	push   $0x80107fe8
 8010734a:	e8 11 93 ff ff       	call   80100660 <cprintf>
      va, cur->name, cur->pid);
     cur->killed = 1;
@@ -21998,6 +21922,7 @@ rcr2(void)
   }
 
   lcr3(V2P(cur->pgdir));
+}
 80107359:	8d 65 f4             	lea    -0xc(%ebp),%esp
 8010735c:	5b                   	pop    %ebx
 8010735d:	5e                   	pop    %esi
@@ -22010,7 +21935,7 @@ rcr2(void)
     return;
   }
 
-  if(*pte &PTE_W){
+  if(*pte & PTE_W){
 80107368:	a8 02                	test   $0x2,%al
 8010736a:	0f 85 e5 00 00 00    	jne    80107455 <pagefault+0x155>
     cprintf("error code :%x", error);
@@ -22020,7 +21945,7 @@ rcr2(void)
   uint physicalAdress = PTE_ADDR(*pte);
   uint refCount = getRefCount(physicalAdress);
 80107370:	83 ec 0c             	sub    $0xc,%esp
-  if(*pte &PTE_W){
+  if(*pte & PTE_W){
     cprintf("error code :%x", error);
     panic("Page fault em pagina marcada com PTE_W");
   }
@@ -22029,7 +21954,7 @@ rcr2(void)
 80107373:	25 00 f0 ff ff       	and    $0xfffff000,%eax
   uint refCount = getRefCount(physicalAdress);
 80107378:	50                   	push   %eax
-  if(*pte &PTE_W){
+  if(*pte & PTE_W){
     cprintf("error code :%x", error);
     panic("Page fault em pagina marcada com PTE_W");
   }
@@ -22042,7 +21967,7 @@ rcr2(void)
 80107380:	5a                   	pop    %edx
 80107381:	59                   	pop    %ecx
 80107382:	50                   	push   %eax
-80107383:	68 66 7f 10 80       	push   $0x80107f66
+80107383:	68 59 7f 10 80       	push   $0x80107f59
 80107388:	89 45 e4             	mov    %eax,-0x1c(%ebp)
 8010738b:	e8 d0 92 ff ff       	call   80100660 <cprintf>
   char* mem;
@@ -22085,7 +22010,7 @@ rcr2(void)
 801073d4:	5a                   	pop    %edx
 801073d5:	59                   	pop    %ecx
 801073d6:	50                   	push   %eax
-801073d7:	68 75 7f 10 80       	push   $0x80107f75
+801073d7:	68 68 7f 10 80       	push   $0x80107f68
 801073dc:	e8 7f 92 ff ff       	call   80100660 <cprintf>
       minusRefCount(physicalAdress);
 801073e1:	89 34 24             	mov    %esi,(%esp)
@@ -22097,7 +22022,7 @@ rcr2(void)
 801073f1:	5e                   	pop    %esi
 801073f2:	5f                   	pop    %edi
 801073f3:	50                   	push   %eax
-801073f4:	68 75 7f 10 80       	push   $0x80107f75
+801073f4:	68 68 7f 10 80       	push   $0x80107f68
 801073f9:	e8 62 92 ff ff       	call   80100660 <cprintf>
 801073fe:	83 c4 10             	add    $0x10,%esp
 }
@@ -22114,6 +22039,7 @@ lcr3(uint val)
   }
 
   lcr3(V2P(cur->pgdir));
+}
 8010740c:	8d 65 f4             	lea    -0xc(%ebp),%esp
 8010740f:	5b                   	pop    %ebx
 80107410:	5e                   	pop    %esi
@@ -22140,7 +22066,7 @@ lcr3(uint val)
       {
         cprintf("Page fault sem memória, terminando o processo");
 80107420:	83 ec 0c             	sub    $0xc,%esp
-80107423:	68 70 80 10 80       	push   $0x80108070
+80107423:	68 64 80 10 80       	push   $0x80108064
 80107428:	e8 33 92 ff ff       	call   80100660 <cprintf>
         cur->killed=1;
 8010742d:	c7 43 24 01 00 00 00 	movl   $0x1,0x24(%ebx)
@@ -22154,24 +22080,24 @@ lcr3(uint val)
   {
     cprintf( "Page fault occured but it was not the user process\n");
 8010743c:	83 ec 0c             	sub    $0xc,%esp
-8010743f:	68 c0 7f 10 80       	push   $0x80107fc0
+8010743f:	68 b4 7f 10 80       	push   $0x80107fb4
 80107444:	e8 17 92 ff ff       	call   80100660 <cprintf>
     panic("pagefault");
-80107449:	c7 04 24 4d 7f 10 80 	movl   $0x80107f4d,(%esp)
+80107449:	c7 04 24 40 7f 10 80 	movl   $0x80107f40,(%esp)
 80107450:	e8 1b 8f ff ff       	call   80100370 <panic>
     cur->killed = 1;
     return;
   }
 
-  if(*pte &PTE_W){
+  if(*pte & PTE_W){
     cprintf("error code :%x", error);
 80107455:	53                   	push   %ebx
 80107456:	53                   	push   %ebx
 80107457:	ff 75 08             	pushl  0x8(%ebp)
-8010745a:	68 57 7f 10 80       	push   $0x80107f57
+8010745a:	68 4a 7f 10 80       	push   $0x80107f4a
 8010745f:	e8 fc 91 ff ff       	call   80100660 <cprintf>
     panic("Page fault em pagina marcada com PTE_W");
-80107464:	c7 04 24 48 80 10 80 	movl   $0x80108048,(%esp)
+80107464:	c7 04 24 3c 80 10 80 	movl   $0x8010803c,(%esp)
 8010746b:	e8 00 8f ff ff       	call   80100370 <panic>
   {
     *pte |= PTE_W;
@@ -22180,5 +22106,5 @@ lcr3(uint val)
   {
     panic("Referências incorretas\n");
 80107470:	83 ec 0c             	sub    $0xc,%esp
-80107473:	68 83 7f 10 80       	push   $0x80107f83
+80107473:	68 76 7f 10 80       	push   $0x80107f76
 80107478:	e8 f3 8e ff ff       	call   80100370 <panic>

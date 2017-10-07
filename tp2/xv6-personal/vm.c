@@ -446,7 +446,7 @@ pagefault(uint error)
     panic("pagefault");
   }
 
-  if(va >= KERNBASE || (pte = (cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U) )
+  if(va >= KERNBASE || (pte = walkpgdir(cur->pgdir, (void*)va, 0)) == 0  || !(*pte & PTE_P) || !(*pte & PTE_U) )
   {
     cprintf("Acesso ao endereço virtual restrito no endereço 0x%x, kill processo %s de pid %d\n",
      va, cur->name, cur->pid);
@@ -454,7 +454,7 @@ pagefault(uint error)
     return;
   }
 
-  if(*pte &PTE_W){
+  if(*pte & PTE_W){
     cprintf("error code :%x", error);
     panic("Page fault em pagina marcada com PTE_W");
   }
