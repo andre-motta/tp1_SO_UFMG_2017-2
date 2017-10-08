@@ -14172,7 +14172,6 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 80106906:	89 d3                	mov    %edx,%ebx
   pde_t *pde;
   pte_t *pgtab;
-  //cprintf("walkpgdir in\n");
   pde = &pgdir[PDX(va)];
 80106908:	c1 ea 16             	shr    $0x16,%edx
 8010690b:	8d 3c 90             	lea    (%eax,%edx,4),%edi
@@ -14185,7 +14184,6 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 8010690e:	83 ec 0c             	sub    $0xc,%esp
   pde_t *pde;
   pte_t *pgtab;
-  //cprintf("walkpgdir in\n");
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
 80106911:	8b 07                	mov    (%edi),%eax
@@ -14218,7 +14216,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 80106935:	c3                   	ret    
 80106936:	8d 76 00             	lea    0x0(%esi),%esi
 80106939:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
-  //cprintf("walkpgdir in\n");
+  pte_t *pgtab;
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
@@ -14231,15 +14229,13 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 8010694b:	89 c6                	mov    %eax,%esi
 8010694d:	74 21                	je     80106970 <walkpgdir+0x70>
       return 0;
-    // Make sure all those PTE_P bits are zero.
-    //cprintf("memset in\n");
+    // Make sure all those PTE_P bits are zero. 
     memset(pgtab, 0, PGSIZE);
 8010694f:	83 ec 04             	sub    $0x4,%esp
 80106952:	68 00 10 00 00       	push   $0x1000
 80106957:	6a 00                	push   $0x0
 80106959:	50                   	push   %eax
 8010695a:	e8 81 dd ff ff       	call   801046e0 <memset>
-    //cprintf("memset out\n");
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.

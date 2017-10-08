@@ -37,17 +37,14 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-  //cprintf("walkpgdir in\n");
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
-    // Make sure all those PTE_P bits are zero.
-    //cprintf("memset in\n");
+    // Make sure all those PTE_P bits are zero. 
     memset(pgtab, 0, PGSIZE);
-    //cprintf("memset out\n");
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
