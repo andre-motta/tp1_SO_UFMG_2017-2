@@ -474,7 +474,7 @@ pagefault(uint error)
           }
           memmove(mem, (char*)P2V(physicalAdress), PGSIZE);
 
-          *pte = V2P(mem) | PTE_P | PTE_U | PTE_W /*| PTE_FLAGS(*pte)*/;
+          *pte = V2P(mem) | PTE_P | PTE_U | PTE_W; 
           *pte &= ~PTE_COW;
           minusRefCount(physicalAdress);
       }
