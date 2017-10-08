@@ -440,7 +440,7 @@ pagefault(uint error)
  
   if(cur ==0)
   {
-    cprintf( "Page fault occured but it was not the user process\n");
+    cprintf( "Acesso restrito, processo nao e modo usuario\n");
     panic("pagefault");
   }
 
