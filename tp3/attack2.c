@@ -163,9 +163,10 @@ int attack1(char* arg){
     int fd = open(arg, O_RDWR);
     lseek(fd, BASE_OFFSET, SEEK_SET); 
     read(fd, &sb, sizeof(struct ext2_super_block));   
-    printf("magic = %d\n", sb.s_magic);
+  //  printf("magic = %d\n", sb.s_magic);
     
     if(sb.s_magic != EXT2_SUPER_MAGIC){
+		printf("Recovering superblock\n");
         lseek(fd, 1024 * 8193, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
@@ -178,17 +179,17 @@ int attack1(char* arg){
             return 0; 
         }
         else{
-            printf("8193 not superblock\n");
+            printf("8 not superblock\n");
         } 
         lseek(fd, 1024 * 16384, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
-            printf("magic = %d\n", sb.s_magic);
+        //    printf("magic = %d\n", sb.s_magic);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
             read(fd, &sb, sizeof(struct ext2_super_block));
-            printf("magic final = %d\n", sb.s_magic);
+       //     printf("magic final = %d\n", sb.s_magic);
             return 0; 
         }
         else{
@@ -197,7 +198,7 @@ int attack1(char* arg){
         lseek(fd, 1024 * 32768, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
-            printf("magic = %d\n", sb.s_magic);
+     //       printf("magic = %d\n", sb.s_magic);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -213,7 +214,8 @@ int attack1(char* arg){
     return 0;
 }
 
-int attack2(int, int, unsigned char* bitmap, struct ext2_inode inode, int** array, int inode_num, int pos, int rows);
+int attack2(int, int, unsigned char* bitmap, struct ext2_inode inode, int* array, int inode_num, int pos, int block_size);
+int attack3(struct ext2_inode, int, int, int);
 
 int fsck(char* arg){
     attack1(arg);
@@ -221,7 +223,7 @@ int fsck(char* arg){
     int fd = open(arg, O_RDWR);
     lseek(fd, BASE_OFFSET, SEEK_SET);
     read(fd, &sb, sizeof(struct ext2_super_block));
-    printf("magic number sb = %d\n", sb.s_magic);
+   // printf("magic number sb = %d\n", sb.s_magic);
     //block size
     unsigned int block_size = 1024 << sb.s_log_block_size;
 
@@ -239,22 +241,21 @@ int fsck(char* arg){
         group_offset = block_size * l * sb.s_blocks_per_group;
         //set head above group descriptor block
         lseek(fd, BASE_OFFSET + group_offset + block_size, SEEK_SET);
-        printf("group_offset = %d\n", group_offset);
+  //      printf("group_offset = %d\n", group_offset);
         read(fd, &gd, sizeof(struct ext2_group_desc));
-        printf("free blocks group = %d\n", gd.bg_free_blocks_count);
-        
+    //    printf("free blocks group = %d\n", gd.bg_free_blocks_count);
+        int i_bmap_address = BASE_OFFSET * gd.bg_block_bitmap + group_offset + BASE_OFFSET;
         unsigned char *bitmap;
         bitmap = malloc(block_size); 
-        lseek(fd, BASE_OFFSET * gd.bg_block_bitmap + group_offset + BASE_OFFSET, SEEK_SET);
+        lseek(fd, i_bmap_address, SEEK_SET);
         read(fd, bitmap, block_size); //read bitmap
 
-        int** array = malloc(sb.s_inodes_per_group*sizeof(int*));
-        for(i=0; i<sb.s_inodes_per_group; i++){
-            array[i] = malloc(15*sizeof(int));
-            for(j=0; j<15; j++)
-                array[i][j] = 0;
-        }
-        
+        int array[sb.s_inodes_per_group];
+        for (i=0; i<sb.s_inodes_per_group; i++)
+		{
+			array[i] = -1;
+		}
+		int valid[sb.s_inodes_per_group]; 
         int inode_address = BASE_OFFSET + group_offset + (gd.bg_inode_table * block_size); 
         lseek(fd, inode_address, SEEK_SET);
         for(i = 0; i<(sb.s_inodes_per_group/8); i++){
@@ -262,87 +263,83 @@ int fsck(char* arg){
                 read(fd, &inode, sizeof(struct ext2_inode));
                 if((bitmap[i] >> j) & 0x01){
                     int inode_num = i*8 + j;
-                    printf("inode file mode %d, inode size %d, inode num %d\n", inode.i_mode, inode.i_size, inode_num);
+//                    printf("inode file mode %d, inode size %d, inode num %d\n", inode.i_mode, inode.i_size, inode_num+1);
                     
-                    int valid = attack2(fd, inode_address, bitmap, inode, array, inode_num, i, sb.s_inodes_per_group);
-                    //if(valid){
-                        //attack3(inode);
-                        //attack4(inode, inode_num);
-                    //}
+                    valid[inode_num] = attack2(fd, i_bmap_address, bitmap, inode, array, inode_num, i, block_size);
                 }
             }
         }
-            
-        for(i=0; i<15; i++){
-            free(array[i]);
-        }
-        free(array);
+		lseek(fd, inode_address, SEEK_SET);
+		for(i=0; i<(sb.s_inodes_per_group/8); i++){
+         	for(j=0; j<8; j++){
+				read(fd, &inode, sizeof(struct ext2_inode));
+				int inode_num = i*8 + j;
+				if(valid[inode_num]){
+                	        attack3(inode, fd, inode_num, inode_address);
+                        	//attack4(inode, inode_num);
+                }
+			}
+		}
+
         free(bitmap);
     }
     return 0;
 }
 
-void compare(struct ext2_inode inode, int** array, int* block, int rows){
-    int i, j, k;
-    for(k=0; k<rows; k++){
-        for(i=0; i<15; i++){
-            for(j = 0; j<15; j++){
-                if(inode.i_block[i] == array[k][j]){
-                    block[i] = 1; 
-                }
-                else
-                    block[i] = 0;
-            }
-        }
-    }       
-}
 
-int blockToBool(int* block){
-    int i;
-    for(i=0; i<15; i++){
-        if(block[i] == 1)
-            return 1;
-    }
-    return 0;
-}
 
-int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, int** array, int inode_num, int pos, int rows){
-    if(inode.i_mode == 0) return 0;
+int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, int* array, int inode_num, int pos, int block_size){
+   if(inode.i_mode == 0 && inode.i_blocks != 0) return 1;
+   if(inode.i_mode == 0 && inode.i_blocks == 0) return 0;
     int i, backup;
     for(int i = 0; i<inode_num; i++){
-        printf("inode block %d == array[%d] %d\n", inode.i_block[0], i, array[i][0]);
-        int block[15]; 
-        compare(inode, array, block, rows);
-        if(blockToBool(block)){
-            //printf("inode num = %d, bitmap before = %d\n", inode_num, bitmap[pos]);
-            //bitmap[pos] ^= (0x01 << (inode_num%8));
-            //printf("bitmap after = %d\n", bitmap[pos]);
-            int counter=0; 
-            int j;
-            for(j=0; j<15; j++){
-                if(block[j] == 1){
-                    inode.i_block[j] = 0;
-                    counter++;
-                }
-            }
-            inode.i_blocks -= counter;
-            if(inode.i_blocks <= 0){
-                bitmap[pos] ^= (0x01 << (inode_num%8));
-                inode.i_blocks = 0;
-            }
+        //printf("inode block %d == array[%d] %d\n", inode.i_block[0], i, array[i]);
+         
+        
+        if(array[i] == inode.i_block[0]){
+            bitmap[pos] ^= (0x01 << (inode_num%8));
             backup = fd;
-            lseek(fd, offset + ((inode_num-1)*sizeof(struct ext2_inode)), SEEK_SET);
-            write(fd, &inode, sizeof(struct ext2_inode));
-            fd = backup;
-            return 0;
+	        lseek(fd, offset, SEEK_SET);
+	   		write(fd, bitmap, block_size);
+	        fd = backup;
+		    array[inode_num] = -1;
+			printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
+			return 0;
         }
-    }
-    for(i=0; i<15; i++){
-        array[inode_num][i] = inode.i_block[i];
-    }
-
-    return 1;
+	 }
+	 //printf("inode num valido %d\n", inode_num+1);
+     array[inode_num] = inode.i_block[0];
+   	 return 1;	
 }
 
+int attack3(struct ext2_inode inode, int fd, int inode_num, int offset)
+{
+	//printf("mode inicial = %u\n", inode.i_mode);
+	int backup, permission =0;
+	backup = fd;
+	lseek(fd, inode_num*sizeof(struct ext2_inode) + offset, SEEK_SET);
+	read(fd, &inode, sizeof(struct ext2_inode));
+	fd = backup;
+	if((inode.i_mode & 0xff) == 0 )
+	{
+		//printf("entrou no attack3 case\n");
+		if(inode.i_links_count == 0) return -1;	
+		inode.i_mode += S_IFREG;
+		printf("Type in CHMOD modifier format xyz (x = other, y=group, z=owner)\n");
+		scanf("%d", &permission);
+		inode.i_mode += permission;
+		backup = fd;
+		lseek(fd, inode_num*sizeof(struct ext2_inode) + offset, SEEK_SET);
+		write(fd, &inode, sizeof(struct ext2_inode));
+		fd = backup; 		
+	}
+	
+//	printf("mode final = %u\n", inode.i_mode);
+	return 0;
 
+}
 
+int attack4(struct ext2_inode inode, int inode_num, int fd, int offset)
+{
+	return 0;
+}
