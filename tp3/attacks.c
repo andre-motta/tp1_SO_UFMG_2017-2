@@ -166,20 +166,20 @@ int attack1(char* arg){
   //  printf("magic = %d\n", sb.s_magic);
     
     if(sb.s_magic != EXT2_SUPER_MAGIC){
-		printf("Recovering superblock\n");
+		//printf("Recovering superblock\n");
         lseek(fd, 1024 * 8193, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
-            printf("magic = %d\n", sb.s_magic);
+            //printf("magic = %d\n", sb.s_magic);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
             read(fd, &sb, sizeof(struct ext2_super_block));
-            printf("magic final = %d\n", sb.s_magic);
+            //printf("magic final = %d\n", sb.s_magic);
             return 0; 
         }
         else{
-            printf("8 not superblock\n");
+            //printf("8 not superblock\n");
         } 
         lseek(fd, 1024 * 16384, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
@@ -193,7 +193,7 @@ int attack1(char* arg){
             return 0; 
         }
         else{
-            printf("16 not superblock\n");
+            //printf("16 not superblock\n");
         }
         lseek(fd, 1024 * 32768, SEEK_SET);
         read(fd, &sb, sizeof(struct ext2_super_block));
@@ -203,11 +203,11 @@ int attack1(char* arg){
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
             read(fd, &sb, sizeof(struct ext2_super_block));
-            printf("magic final = %d\n", sb.s_magic);
+            //printf("magic final = %d\n", sb.s_magic);
             return 0; 
         }
         else{
-            printf("32 not superblock\n");
+            //printf("32 not superblock\n");
         } 
     }
     
@@ -303,7 +303,7 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
 	   		write(fd, bitmap, block_size);
 	        fd = backup;
 		    array[inode_num] = -1;
-			printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
+			//printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
 			return 0;
         }
 	 }
