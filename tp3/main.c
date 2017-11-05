@@ -2,6 +2,7 @@
 
 
 int attack1(char* arg){
+    char answer;
     struct ext2_super_block sb;
     int fd = open(arg, O_RDWR);
     lseek(fd, BASE_OFFSET, SEEK_SET); 
@@ -14,6 +15,8 @@ int attack1(char* arg){
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
             //printf("magic = %d\n", sb.s_magic);
+            printf("Resolve attack 1?(y)\n");
+            scanf("%c", &answer);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -28,6 +31,8 @@ int attack1(char* arg){
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
         //    printf("magic = %d\n", sb.s_magic);
+            printf("Resolve attack 1?(y)\n");
+            scanf("%c", &answer);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -42,6 +47,8 @@ int attack1(char* arg){
         read(fd, &sb, sizeof(struct ext2_super_block));
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
      //       printf("magic = %d\n", sb.s_magic);
+            printf("Resolve attack 1?(y)\n");
+            scanf("%c", &answer);
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -61,11 +68,14 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
    if(inode.i_mode == 0 && inode.i_blocks != 0) return 1;
    if(inode.i_mode == 0 && inode.i_blocks == 0) return 0;
     int i, backup;
+    char answer;
     for(int i = 0; i<inode_num; i++){
         //printf("inode block %d == array[%d] %d\n", inode.i_block[0], i, array[i]);
          
         
         if(array[i] == inode.i_block[0]){
+            printf("Resolve attack 2?(y)\n");
+            scanf("%c", &answer);
             bitmap[pos] ^= (0x01 << (inode_num%8));
             backup = fd;
 	        lseek(fd, offset, SEEK_SET);
@@ -112,7 +122,7 @@ int attack4(struct ext2_inode inode, int inode_num, int* table, int lostFound, i
 	int i;
 	for (i=0; i<sizetable; i++)
 	{
-		if(inode_num == table[i])
+		if(inode_num == table[i]){}
 			//Teoricamente os inodes orfãos seriam encontrados aqui, contudo algo de errado ocorreu.
 	}
 	
