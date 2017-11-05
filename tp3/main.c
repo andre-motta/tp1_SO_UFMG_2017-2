@@ -13,5 +13,6 @@
 int main(int argc, char **argv){   
     fsck(argv[1]);
 	fsck(argv[1]);
+	
     return 0;
 }
