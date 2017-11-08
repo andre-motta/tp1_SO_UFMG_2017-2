@@ -67,7 +67,7 @@ int attack1(char* arg){
 int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, int* array, int inode_num, int pos, int block_size){
    if(inode.i_mode == 0 && inode.i_blocks != 0) return 1;
    if(inode.i_mode == 0 && inode.i_blocks == 0) return 0;
-    int i, backup;
+    int i, j, backup;
     char answer;
     for(int i = 0; i<inode_num; i++){
         //printf("inode block %d == array[%d] %d\n", inode.i_block[0], i, array[i]);
@@ -77,13 +77,23 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
             printf("Resolve attack 2?(y)\n");
             scanf("%c", &answer);
             bitmap[pos] ^= (0x01 << (inode_num%8));
+	    //NEW (ZEROES THE INODE)
+	    for(i=0; j<15; j++)
+		    inode.i_block[i] = 0;
+	    inode.i_blocks = 0;
+	    inode.i_mode = 0;
+	    //
             backup = fd;
-	        lseek(fd, offset, SEEK_SET);
-	   		write(fd, bitmap, block_size);
-	        fd = backup;
-		    array[inode_num] = -1;
-			//printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
-			return 0;
+	    lseek(fd, offset, SEEK_SET);
+	    write(fd, bitmap, block_size);
+	    //NEW (WRITES THE INODE IN THE DATA OFFSETS TO I_BITMAP THEN JUMPS 1 BLOCK + THE NUMBER OF BLOCKS UNTIL YOUR INODE)
+	    lseek(fd, offset + (block_size * (inode_num +1)), SEEK_SET);
+	    write(fd, &inode, sizeof(struct ext2_inode);
+            //
+	    fd = backup;
+	    array[inode_num] = -1;
+	    //printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
+            return 0;
         }
 	 }
 	 //printf("inode num valido %d\n", inode_num+1);
