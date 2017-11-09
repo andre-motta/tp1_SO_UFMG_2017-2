@@ -159,11 +159,12 @@ struct ext2_inode {
     } osd2;             /* OS dependent 2 */
 };
 
-struct ext2_dir_entry {
+struct ext2_dir_entry2 {
   __le32  inode;         /* Inode number */
   __le16  rec_len;       /* Directory entry length */
-  __le16  name_len;      /* Name length */
-  char    name[];        /* File name, up to EXT2_NAME_LEN */
+  __u8  name_len;      /* Name length */
+  __u8 file_type;
+  char    name[255];        /* File name, up to EXT2_NAME_LEN */
 };
 
 
