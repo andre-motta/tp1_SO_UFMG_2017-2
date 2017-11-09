@@ -245,10 +245,11 @@ int fsck(char* arg){
 		}
 		int lostfound;
         int inode_address = (gd.bg_inode_table * block_size); 
+	int n = 0;
 
         for(i = 0; i<(sb.s_inodes_per_group); i++){
 			inode_num = i + l*sb.s_inodes_per_group;
-        	lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
+        		lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
 			if((bitmap[i/8] >> (i%8) & 1)){
 				printf("inode %d lido bloco = %d\n", inode_num, inode.i_block[0]);
@@ -257,28 +258,26 @@ int fsck(char* arg){
 			}
 			//printf("ciclo do for de attack2\n");            
         }
-		lseek(fd, inode_address, SEEK_SET);
-		for(i = 10; i<(sb.s_inodes_per_group); i++){
+		
+		for(i = 11; i<(sb.s_inodes_per_group); i++){
 			inode_num = i + l*sb.s_inodes_per_group;
+        		lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
 			if(valid[i]){
 				printf("valid inode file mode %d, isdir %d inode size %d, inode num %d\n", inode.i_mode, S_ISDIR(inode.i_mode), inode.i_size, inode_num+1);
 				attack3(inode, fd, i, inode_address);
 				
 			}
-		}
-		lseek(fd, inode_address, SEEK_SET);
-		for(i=10; i<(sb.s_inodes_per_group); i++)
-		{
 			if((inode.i_mode & 0x4000 != 0) && (inode.i_links_count != 0) && valid[i]){	
 					printf("inode %d is dir \n", i + 1);	
-					//lostfound = findReferences(inode, inode_num, fd,  inode_address, group_offset, block_size, &n, table);
+					lostfound = findReferences(inode, inode_num, fd,  inode_address, group_offset, block_size, &n, table);
 				}
 		}
 		for (i=0; i<30; i++)
-		{
-			printf("array[%d] = %d and table[%d] = %d and valid = %d\n", i, array[i], i, table[i], valid[i]);
-		}
+			{
+				printf("inode %d = %d (1 is referenced 0 is ghost inode)\n", i+1, table[i]);
+			}
+		
     }
     return 0;
 }
