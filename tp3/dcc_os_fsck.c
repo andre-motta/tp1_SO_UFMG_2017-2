@@ -117,19 +117,22 @@ int attack3(struct ext2_inode inode, int fd, int inode_num, int inode_tb_add)
 	}
 	fd = backup;
 //	printf("mode final = %u\n", inode.i_mode);
-	return 0;
+	return inode_num;
 
 }
-int attack4(struct ext2_inode inode, int inode_num, int* table, int lostFound, int sizetable)
+int attack4(struct ext2_inode inode, int inode_num, int real_num,  int* table, int lostFound, int sizetable)
 {
 	int i;
 	for (i=0; i<sizetable; i++)
 	{
-		if(inode_num == table[i]){}
+		if(inode_num == table[i]){
+			printf("inode % is lost\n", real_num+1);
+		}
 			//Teoricamente os inodes orfãos seriam encontrados aqui, contudo algo de errado ocorreu.
 	}
 	
 }
+
 int fillTable(int inode, int* pos, int *table)
 {
 	int i;
@@ -153,6 +156,7 @@ int checkname(char* name)
 }
 int findRefInBlock(int block, struct ext2_inode inode,  int  inode_id, int fd, int group_offset, int block_size,  int* table )
 {
+	char garbage;
 	int lost_found = 0;
 	struct ext2_dir_entry2 dir;
 	int accumulator = 0;
@@ -164,13 +168,17 @@ int findRefInBlock(int block, struct ext2_inode inode,  int  inode_id, int fd, i
 		printf("acummulator b4= %d\n", accumulator);
 		lseek(fd, offset + accumulator, SEEK_SET);
 		read(fd, &dir.inode, sizeof(dir.inode));
+		if(dir.inode == 0){
+			break;
+		}
 		read(fd, &dir.rec_len, sizeof(dir.rec_len));
 		read(fd, &dir.name_len, sizeof(dir.name_len));
 		read(fd, &dir.file_type, sizeof(dir.file_type));
 		read(fd, dir.name, sizeof(char)*dir.name_len);
 		dir.name[dir.name_len] = '\0';
 		accumulator += dir.rec_len;
-		printf("acummulator after= %d\n", accumulator);
+		printf("acummulator after= %d blocksize = %d\n", accumulator, block_size);
+		scanf("%c", &garbage);
 		printf("read file %s of inode %d namesize %d and size %d\n", dir.name, dir.inode, dir.name_len, dir.rec_len);
 		if(dir.inode != 0)
 		{
@@ -182,7 +190,11 @@ int findRefInBlock(int block, struct ext2_inode inode,  int  inode_id, int fd, i
 			
 			lost_found = dir.inode -1;
 		}
-		if (accumulator == block_size) break;	
+		if (accumulator >= block_size) 
+		{
+			accumulator = 0;
+			break;
+		}	
 	}
 	
 	return lost_found;
@@ -252,23 +264,24 @@ int fsck(char* arg){
         		lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
 			if((bitmap[i/8] >> (i%8) & 1)){
-				printf("inode %d lido bloco = %d\n", inode_num, inode.i_block[0]);
+				printf("inode %d lido bloco = %d\n", inode_num + 1, inode.i_block[0]);
 				printf("Inode %d must be checked\n", inode_num +1);
 				valid[i] = attack2(fd, i_bmap_address, bitmap, inode, array, i, i/8, block_size);
 			}
 			//printf("ciclo do for de attack2\n");            
         }
 		
-		for(i = 11; i<(sb.s_inodes_per_group); i++){
+		for(i = 0; i<(sb.s_inodes_per_group); i++){
+			if (i == 6) break;
 			inode_num = i + l*sb.s_inodes_per_group;
-        		lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
+        	lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
 			if(valid[i]){
 				printf("valid inode file mode %d, isdir %d inode size %d, inode num %d\n", inode.i_mode, S_ISDIR(inode.i_mode), inode.i_size, inode_num+1);
-				attack3(inode, fd, i, inode_address);
+				valid[attack3(inode, fd, i, inode_address)] = 1;
 				
 			}
-			if((inode.i_mode & 0x4000 != 0) && (inode.i_links_count != 0) && valid[i]){	
+			if(S_ISDIR(inode.i_mode) && (inode.i_links_count != 0 && (bitmap[i/8]>> (i%8) & 1))){	
 					printf("inode %d is dir \n", i + 1);	
 					lostfound = findReferences(inode, inode_num, fd,  inode_address, group_offset, block_size, &n, table);
 				}
@@ -277,7 +290,15 @@ int fsck(char* arg){
 			{
 				printf("inode %d = %d (1 is referenced 0 is ghost inode)\n", i+1, table[i]);
 			}
-		
+		for(i = 11; i<(sb.s_inodes_per_group); i++){
+			inode_num = i + l*sb.s_inodes_per_group;
+        	lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
+			read(fd, &inode, sizeof(struct ext2_inode));
+			if(valid[i]){
+				 attack4( inode,  i,   inode_num,   table,  lostfound, sb.s_inodes_per_group);
+
+			}
+		}
     }
     return 0;
 }
