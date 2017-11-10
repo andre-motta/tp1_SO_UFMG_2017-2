@@ -16,7 +16,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
             //printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            scanf("%c", &answer);
+            answer = getchar(); 
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -32,7 +32,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
         //    printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            scanf("%c", &answer);
+            answer = getchar();
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -48,7 +48,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
      //       printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            scanf("%c", &answer);
+            answer = getchar(); 
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -76,7 +76,7 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
         
         if(array[i] == inode.i_block[0]){
             printf("Resolve attack 2?(y)\n");
-            scanf("%c", &answer);
+            answer = getchar(); 
             bitmap[pos] ^= (0x01 << (7-pos%8));
 			lseek(fd, offset*block_size, SEEK_SET);
 			write(fd, bitmap, block_size);
