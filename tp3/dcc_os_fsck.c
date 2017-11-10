@@ -94,7 +94,7 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
 
 int attack3(struct ext2_inode inode, int fd, int inode_num, int inode_tb_add)
 {
-	//printf("mode inicial = %u\n", inode.i_mode);
+	printf("mode inicial = %u, inode %d\n", inode.i_mode, inode_num+1);
 	int backup, permission =0;
 	backup = fd;
 	lseek(fd, inode_num*sizeof(struct ext2_inode) + inode_tb_add, SEEK_SET);
@@ -122,12 +122,10 @@ int attack3(struct ext2_inode inode, int fd, int inode_num, int inode_tb_add)
 }
 int attack4(struct ext2_inode inode, int inode_num, int real_num,  int* table, int lostFound, int sizetable)
 {
-	int i;
-	for (i=0; i<sizetable; i++)
-	{
-		if(inode_num == table[i]){
+
+	if(!table[inode_num]){
 			printf("inode % is lost\n", real_num+1);
-		}
+		
 			//Teoricamente os inodes orfãos seriam encontrados aqui, contudo algo de errado ocorreu.
 	}
 	
@@ -233,7 +231,7 @@ int fsck(char* arg){
 		inode_num = 0;
 		printf("\n\n------------------ GROUP %d -------------------\n\n", l);
 
-        group_offset = sizeof(struct ext2_group_desc) * l * sb.s_blocks_per_group;
+        group_offset =  l *sizeof(struct ext2_group_desc);
 
         lseek(fd, BASE_OFFSET + group_offset + block_size, SEEK_SET);
         read(fd, &gd, sizeof(struct ext2_group_desc));
@@ -261,8 +259,9 @@ int fsck(char* arg){
 
         for(i = 0; i<(sb.s_inodes_per_group); i++){
 			inode_num = i + l*sb.s_inodes_per_group;
-        		lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
+			lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
+			if(i<30) printf("inode %d imode %d\n", inode_num+1, inode.i_mode);
 			if((bitmap[i/8] >> (i%8) & 1)){
 				printf("inode %d lido bloco = %d\n", inode_num + 1, inode.i_block[0]);
 				printf("Inode %d must be checked\n", inode_num +1);
@@ -272,17 +271,17 @@ int fsck(char* arg){
         }
 		
 		for(i = 0; i<(sb.s_inodes_per_group); i++){
-			if (i == 6) break;
+			
 			inode_num = i + l*sb.s_inodes_per_group;
         	lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
 			if(valid[i]){
 				printf("valid inode file mode %d, isdir %d inode size %d, inode num %d\n", inode.i_mode, S_ISDIR(inode.i_mode), inode.i_size, inode_num+1);
-				valid[attack3(inode, fd, i, inode_address)] = 1;
+				attack3(inode, fd, i, inode_address);
 				
 			}
-			if(S_ISDIR(inode.i_mode) && (inode.i_links_count != 0 && (bitmap[i/8]>> (i%8) & 1))){	
-					printf("inode %d is dir \n", i + 1);	
+			if(S_ISDIR(inode.i_mode) && (inode.i_links_count != 0)&&(bitmap[i/8] >> (i%8) & 1)){	
+					printf("inode %d is dir \n", i + 1);
 					lostfound = findReferences(inode, inode_num, fd,  inode_address, group_offset, block_size, &n, table);
 				}
 		}
@@ -290,11 +289,11 @@ int fsck(char* arg){
 			{
 				printf("inode %d = %d (1 is referenced 0 is ghost inode)\n", i+1, table[i]);
 			}
-		for(i = 11; i<(sb.s_inodes_per_group); i++){
+		for(i = 0; i<(sb.s_inodes_per_group); i++){
 			inode_num = i + l*sb.s_inodes_per_group;
         	lseek(fd, inode_address +(i*sizeof(struct ext2_inode)), SEEK_SET);
 			read(fd, &inode, sizeof(struct ext2_inode));
-			if(valid[i]){
+			if(valid[i] && inode_num > 10){
 				 attack4( inode,  i,   inode_num,   table,  lostfound, sb.s_inodes_per_group);
 
 			}
