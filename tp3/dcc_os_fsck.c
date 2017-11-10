@@ -2,7 +2,7 @@
 
 
 int attack1(char* arg){
-    char answer;
+    char garbage; 
     struct ext2_super_block sb;
     int fd = open(arg, O_RDWR);
     lseek(fd, BASE_OFFSET, SEEK_SET); 
@@ -16,7 +16,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
             //printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            answer = getchar(); 
+            scanf("%c", &garbage); 
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -32,7 +32,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
         //    printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            answer = getchar();
+            scanf("%c", &garbage); 
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -48,7 +48,7 @@ int attack1(char* arg){
         if(sb.s_magic == EXT2_SUPER_MAGIC) {
      //       printf("magic = %d\n", sb.s_magic);
             printf("Resolve attack 1?(y)\n");
-            answer = getchar(); 
+            scanf("%c", &garbage); 
             lseek(fd, 1024, SEEK_SET);
             write(fd, &sb, sizeof(struct ext2_super_block));
             lseek(fd, 1024, SEEK_SET);
@@ -69,16 +69,18 @@ int attack2(int fd, int offset, unsigned char* bitmap, struct ext2_inode inode, 
    printf("Entrou no attack 2\n");
     int i, j, backup;
 	backup = fd;
-    char answer;
+    char garbage;
     for(int i = 0; i<inode_num; i++){
         	printf("inode %d block %d == array[%d] %d ?????\n",inode_num+1, inode.i_block[0], i, array[i]);
          
         
         if(array[i] == inode.i_block[0]){
             printf("Resolve attack 2?(y)\n");
-            answer = getchar(); 
-            bitmap[pos] ^= (0x01 << (7-pos%8));
-			lseek(fd, offset*block_size, SEEK_SET);
+            scanf("%c", &garbage);
+            scanf("%c", &garbage);
+            scanf("%c", &garbage); 
+            bitmap[pos] ^= (0x01 << (7-inode_num%8));
+			lseek(fd, offset, SEEK_SET);
 			write(fd, bitmap, block_size);
 	    array[inode_num] = -1;
 	    printf("removing duplicate inode %d referencing inode %d\n", inode_num+1, i+1); 
